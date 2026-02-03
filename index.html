@@ -1,40 +1,49 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <title>ルレット</title>
 <style>
-  body {
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: white;
-  }
-  canvas {
-    cursor: pointer;
-  }
+body {
+  margin: 0;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-family: sans-serif;
+}
+#result {
+  font-size: 28px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+canvas {
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
 
+<div id="result">▼ 抽選結果 ▼</div>
 <canvas id="roulette" width="400" height="400"></canvas>
 
 <script>
 const canvas = document.getElementById("roulette");
 const ctx = canvas.getContext("2d");
+const resultEl = document.getElementById("result");
 
-const items = ["A", "B", "C", "D"];
+const items = ["A", "B", "C"];
 let angle = 0;
 let speed = 0;
 let spinning = false;
 
-function draw(hit = null) {
+function draw(hit = -1) {
   const cx = 200;
   const cy = 200;
-  const r = 180;
-  const step = (Math.PI * 2) / items.length;
+  const r = 170;
+  const step = Math.PI * 2 / items.length;
 
   ctx.clearRect(0, 0, 400, 400);
 
@@ -55,25 +64,24 @@ function draw(hit = null) {
     ctx.translate(cx, cy);
     ctx.rotate(start + step / 2);
     ctx.textAlign = "right";
-    ctx.fillStyle = "#000";
     ctx.font = "16px sans-serif";
+    ctx.fillStyle = "#333";
     ctx.fillText(t, r - 10, 5);
     ctx.restore();
   });
 
-  // ▼ 下の▲
-  ctx.fillStyle = "black";
+  // ▲ 上の判定マーク
   ctx.beginPath();
-  ctx.moveTo(cx - 10, cy + r + 5);
-  ctx.lineTo(cx + 10, cy + r + 5);
-  ctx.lineTo(cx, cy + r + 25);
-  ctx.closePath();
+  ctx.moveTo(cx - 12, cy - r - 8);
+  ctx.lineTo(cx + 12, cy - r - 8);
+  ctx.lineTo(cx, cy - r - 28);
+  ctx.fillStyle = "#000";
   ctx.fill();
 }
 
-function getHit() {
-  const step = (Math.PI * 2) / items.length;
-  const pointer = (Math.PI / 2 + angle) % (Math.PI * 2);
+function getHitIndex() {
+  const step = Math.PI * 2 / items.length;
+  const pointer = (Math.PI * 1.5 + angle) % (Math.PI * 2);
   return Math.floor(pointer / step);
 }
 
@@ -81,6 +89,7 @@ function spin() {
   if (spinning) return;
   spinning = true;
   speed = Math.random() * 0.4 + 0.3;
+  resultEl.textContent = "抽選中…";
 
   function loop() {
     angle += speed;
@@ -88,10 +97,11 @@ function spin() {
 
     if (speed < 0.002) {
       spinning = false;
-      draw(getHit());
+      const hit = getHitIndex();
+      draw(hit);
+      resultEl.textContent = "結果： " + items[hit];
       return;
     }
-
     draw();
     requestAnimationFrame(loop);
   }
