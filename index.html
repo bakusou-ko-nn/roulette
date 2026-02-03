@@ -1,34 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>ルレット</title>
+<style>
+  body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: white;
+  }
+  canvas {
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="roulette" width="400" height="400"></canvas>
+
 <script>
 const canvas = document.getElementById("roulette");
 const ctx = canvas.getContext("2d");
 
-let items = ["A", "B", "C"];
+const items = ["A", "B", "C", "D"];
 let angle = 0;
+let speed = 0;
 let spinning = false;
-let velocity = 0;
 
-function drawRoulette(highlight = null) {
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
-  const r = canvas.width / 2 - 10;
+function draw(hit = null) {
+  const cx = 200;
+  const cy = 200;
+  const r = 180;
   const step = (Math.PI * 2) / items.length;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, 400, 400);
 
-  items.forEach((text, i) => {
-    const start = angle + step * i;
+  items.forEach((t, i) => {
+    const start = angle + i * step;
     const end = start + step;
 
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.arc(cx, cy, r, start, end);
     ctx.closePath();
-
-    ctx.fillStyle =
-      i === highlight
-        ? "#ffb3b3"
-        : `hsl(${(i * 360) / items.length}, 70%, 85%)`;
-
+    ctx.fillStyle = i === hit ? "#ffb3b3" : "#cceeff";
     ctx.fill();
     ctx.strokeStyle = "#fff";
     ctx.stroke();
@@ -37,55 +55,52 @@ function drawRoulette(highlight = null) {
     ctx.translate(cx, cy);
     ctx.rotate(start + step / 2);
     ctx.textAlign = "right";
-    ctx.fillStyle = "#333";
+    ctx.fillStyle = "#000";
     ctx.font = "16px sans-serif";
-    ctx.fillText(text, r - 10, 5);
+    ctx.fillText(t, r - 10, 5);
     ctx.restore();
   });
 
-  // ▼ 下の判定マーク
-  ctx.fillStyle = "#000";
+  // ▼ 下の▲
+  ctx.fillStyle = "black";
   ctx.beginPath();
-  ctx.moveTo(cx - 12, cy + r + 5);
-  ctx.lineTo(cx + 12, cy + r + 5);
+  ctx.moveTo(cx - 10, cy + r + 5);
+  ctx.lineTo(cx + 10, cy + r + 5);
   ctx.lineTo(cx, cy + r + 25);
   ctx.closePath();
   ctx.fill();
 }
 
-function getHitIndex() {
+function getHit() {
   const step = (Math.PI * 2) / items.length;
-
-  // ★ここが重要：下（6時）で判定
-  let pointerAngle = (Math.PI / 2 + angle) % (Math.PI * 2);
-
-  return Math.floor(pointerAngle / step);
+  const pointer = (Math.PI / 2 + angle) % (Math.PI * 2);
+  return Math.floor(pointer / step);
 }
 
 function spin() {
   if (spinning) return;
   spinning = true;
-  velocity = Math.random() * 0.3 + 0.35;
+  speed = Math.random() * 0.4 + 0.3;
 
-  function animate() {
-    angle += velocity;
-    velocity *= 0.985;
+  function loop() {
+    angle += speed;
+    speed *= 0.985;
 
-    if (velocity < 0.002) {
+    if (speed < 0.002) {
       spinning = false;
-      const hit = getHitIndex();
-      drawRoulette(hit);
+      draw(getHit());
       return;
     }
 
-    drawRoulette();
-    requestAnimationFrame(animate);
+    draw();
+    requestAnimationFrame(loop);
   }
-
-  animate();
+  loop();
 }
 
 canvas.addEventListener("click", spin);
-
-drawRoulette();
+draw();
 </script>
+
+</body>
+</html>
