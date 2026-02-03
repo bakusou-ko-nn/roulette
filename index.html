@@ -3,31 +3,55 @@
 <head>
 <meta charset="UTF-8">
 <title>ルレット</title>
+
 <style>
 body {
   margin: 0;
   background: white;
+  font-family: sans-serif;
+}
+
+/* 全体レイアウト */
+.wrapper {
+  width: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100vh;
-  font-family: sans-serif;
 }
+
+/* 結果表示（上） */
 #result {
-  font-size: 30px;
-  margin-bottom: 12px;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  font-size: 32px;
   font-weight: bold;
 }
+
+/* ルーレット位置（下にずらす） */
+.roulette-area {
+  margin-top: 40px;
+}
+
 canvas {
   cursor: pointer;
 }
 </style>
 </head>
+
 <body>
 
-<div id="result">▼ 抽選結果 ▼</div>
-<canvas id="roulette" width="400" height="400"></canvas>
+<div class="wrapper">
+
+  <!-- 結果表示はここ（上） -->
+  <div id="result">▼ 抽選結果 ▼</div>
+
+  <!-- ルーレットは下 -->
+  <div class="roulette-area">
+    <canvas id="roulette" width="400" height="400"></canvas>
+  </div>
+
+</div>
 
 <script>
 const canvas = document.getElementById("roulette");
@@ -70,7 +94,7 @@ function draw(hit = -1) {
     ctx.restore();
   });
 
-  // ▼ 上の判定マーク
+  /* ▼ 上の判定マーク */
   ctx.beginPath();
   ctx.moveTo(cx - 12, cy - r - 28);
   ctx.lineTo(cx + 12, cy - r - 28);
@@ -81,8 +105,8 @@ function draw(hit = -1) {
 
 function getHitIndex() {
   const step = Math.PI * 2 / items.length;
-  // 上（12時）を判定位置にする
-  const pointerAngle = (Math.PI * 1.5 - angle + Math.PI * 2) % (Math.PI * 2);
+  const pointerAngle =
+    (Math.PI * 1.5 - angle + Math.PI * 2) % (Math.PI * 2);
   return Math.floor(pointerAngle / step);
 }
 
