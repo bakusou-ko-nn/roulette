@@ -7,7 +7,7 @@ let angle = 0;
 let spinning = false;
 let velocity = 0;
 
-function drawRoulette(highlightIndex = null) {
+function drawRoulette(highlight = null) {
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
   const r = canvas.width / 2 - 10;
@@ -25,15 +25,14 @@ function drawRoulette(highlightIndex = null) {
     ctx.closePath();
 
     ctx.fillStyle =
-      i === highlightIndex
-        ? "rgb(255,190,190)" // 当たり（少し濃いパステル）
+      i === highlight
+        ? "#ffb3b3"
         : `hsl(${(i * 360) / items.length}, 70%, 85%)`;
 
     ctx.fill();
     ctx.strokeStyle = "#fff";
     ctx.stroke();
 
-    // 文字
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(start + step / 2);
@@ -44,11 +43,11 @@ function drawRoulette(highlightIndex = null) {
     ctx.restore();
   });
 
-  // ▼（下の判定マーカー）
+  // ▼ 下の判定マーク
   ctx.fillStyle = "#000";
   ctx.beginPath();
-  ctx.moveTo(cx - 10, cy + r + 5);
-  ctx.lineTo(cx + 10, cy + r + 5);
+  ctx.moveTo(cx - 12, cy + r + 5);
+  ctx.lineTo(cx + 12, cy + r + 5);
   ctx.lineTo(cx, cy + r + 25);
   ctx.closePath();
   ctx.fill();
@@ -57,9 +56,8 @@ function drawRoulette(highlightIndex = null) {
 function getHitIndex() {
   const step = (Math.PI * 2) / items.length;
 
-  // ▼は「下（6時）」＝ 90度（Math.PI / 2）
-  let pointerAngle = (Math.PI / 2 - angle) % (Math.PI * 2);
-  if (pointerAngle < 0) pointerAngle += Math.PI * 2;
+  // ★ここが重要：下（6時）で判定
+  let pointerAngle = (Math.PI / 2 + angle) % (Math.PI * 2);
 
   return Math.floor(pointerAngle / step);
 }
@@ -89,6 +87,5 @@ function spin() {
 
 canvas.addEventListener("click", spin);
 
-// 初期描画
 drawRoulette();
 </script>
