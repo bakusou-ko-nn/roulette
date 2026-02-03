@@ -3,198 +3,177 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ルーレット</title>
+<title>超詰め込みルーレット</title>
 <style>
-  body {
-    margin: 0;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #ffffff;
-    display: flex;
-    justify-content: center;
-  }
-  .app {
-    width: 95vw;
-    max-width: 1200px;
-    display: grid;
-    grid-template-columns: 1fr 2fr 1fr;
-    gap: 16px;
-    padding: 24px 24px 80px;
-  }
-
-  /* 左：タブ */
-  .tabs {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .tab {
-    padding: 10px;
-    border: 2px solid #7fd6c2;
-    cursor: pointer;
-  }
-  .tab.active {
-    background: #cceee6;
-    border-radius: 12px;
-  }
-
-  /* 音量 */
-  .volume {
-    margin-top: 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-  .volume input[type=range] {
-    writing-mode: bt-lr;
-    -webkit-appearance: slider-vertical;
-    height: 120px;
-  }
-
-  /* 中央：ルーレット */
-  .center {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-  }
-  canvas {
-    width: 320px;
-    height: 320px;
-    touch-action: manipulation;
-  }
-  .hit {
-    font-size: 32px;
-    font-weight: bold;
-    margin-top: 8px;
-    text-decoration: underline;
-  }
-
-  /* 右：履歴 */
-  .history {
-    border: 2px solid red;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .history-item {
-    font-size: 20px;
-  }
-
-  /* 下部 */
-  .bottom {
-    position: fixed;
-    bottom: 16px;
-    left: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
+:root{
+  --bg:#ffffff;
+  --border:#ffffff;
+  --tab-green:#9be3c7;
+  --tab-active:#cceee6;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:#fff;
+  font-family:"Rounded Mplus 1c", system-ui, sans-serif;
+}
+.app{
+  width:100vw;
+  max-width:1600px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:1fr 2fr 1fr;
+  padding:24px 24px 96px;
+  gap:24px;
+}
+/* 左：タブ */
+.tabs{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.tab{
+  border:2px solid var(--tab-green);
+  padding:14px;
+  cursor:pointer;
+}
+.tab.active{
+  background:var(--tab-active);
+  border-radius:14px;
+}
+/* 音量 */
+.volume{
+  margin-top:16px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.volume input{
+  writing-mode:bt-lr;
+  -webkit-appearance:slider-vertical;
+  height:140px;
+}
+/* 中央 */
+.center{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+canvas{
+  width:420px;
+  height:420px;
+}
+.hit{
+  font-size:40px;
+  font-weight:700;
+  margin-top:16px;
+  text-decoration:underline;
+}
+/* 右：履歴 */
+.history{
+  border:2px solid red;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.history div{font-size:22px;}
+/* 下 */
+.bottom{
+  position:fixed;
+  left:24px;
+  bottom:24px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="tabs">
-    <div class="tab active">タブ1</div>
-    <div class="tab">タブ2</div>
-
+    <div class="tab active">ルーレット</div>
     <div class="volume">
       <span>音量</span>
-      <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" />
+      <input id="vol" type="range" min="0" max="1" step="0.01" value="0.7">
     </div>
   </div>
-
   <div class="center">
-    <canvas id="wheel" width="320" height="320"></canvas>
-    <div class="hit" id="hitText">—</div>
+    <canvas id="wheel" width="420" height="420"></canvas>
+    <div class="hit" id="hit">—</div>
   </div>
-
   <div class="history" id="history"></div>
 </div>
-
 <div class="bottom">
-  <button id="urlBtn">URL生成</button>
-  <div id="urlArea"></div>
+  <button id="gen">URL生成</button>
+  <div id="url"></div>
 </div>
-
 <script>
-const canvas = document.getElementById('wheel');
-const ctx = canvas.getContext('2d');
-const items = ['A','B','C','D'];
-let angle = 0;
-let spinning = false;
-let volume = 0.7;
-
-const timpani = new Audio('https://soundeffect-lab.info/sound/battle/mp3/timpani-roll.mp3');
-const boom = new Audio('https://soundeffect-lab.info/sound/battle/mp3/explosion1.mp3');
-const fanfare = new Audio('https://soundeffect-lab.info/sound/various/mp3/dondonpafupafu.mp3');
-
-timpani.loop = true;
-
-document.getElementById('volume').addEventListener('input', e => {
-  volume = e.target.value;
-  timpani.volume = boom.volume = fanfare.volume = volume;
-});
-
-function draw() {
-  ctx.clearRect(0,0,320,320);
-  const r = 160;
-  const step = (Math.PI*2)/items.length;
-
+const canvas=document.getElementById('wheel');
+const ctx=canvas.getContext('2d');
+const items=[];
+let angle=0,spinning=false;
+const timpani=new Audio('https://soundeffect-lab.info/sound/battle/mp3/timpani-roll.mp3');
+const pafu=new Audio('https://soundeffect-lab.info/sound/various/mp3/dondonpafupafu.mp3');
+timpani.loop=true;
+const vol=document.getElementById('vol');
+vol.oninput=()=>{timpani.volume=pafu.volume=vol.value};
+function draw(hitIndex=null){
+  ctx.clearRect(0,0,420,420);
+  const r=210;
+  const step=(Math.PI*2)/(items.length||1);
   items.forEach((t,i)=>{
     ctx.beginPath();
     ctx.moveTo(r,r);
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle= i===hitIndex?'#ffb3b3':'#fff';
     ctx.arc(r,r,r,i*step+angle,(i+1)*step+angle);
     ctx.fill();
-
     ctx.save();
     ctx.translate(r,r);
     ctx.rotate(i*step+step/2+angle);
-    ctx.fillStyle = '#000';
-    ctx.fillText(t,80,5);
+    ctx.fillStyle='#000';
+    ctx.fillText(t,120,6);
     ctx.restore();
   });
-
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
-  ctx.font = '24px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('抽選開始',160,170);
+  ctx.fillStyle='rgba(0,0,0,0.2)';
+  ctx.font='24px sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('抽選開始',210,220);
+  // ▲
+  ctx.fillStyle='#000';
+  ctx.beginPath();
+  ctx.moveTo(200,410);
+  ctx.lineTo(220,410);
+  ctx.lineTo(210,390);
+  ctx.fill();
 }
-
-function spin() {
-  if (spinning) return;
-  spinning = true;
-  timpani.currentTime = 0;
+function spin(){
+  if(spinning||items.length===0)return;
+  spinning=true;
+  timpani.currentTime=0;
   timpani.play();
-  let speed = Math.random()*0.3 + 0.25;
-
-  const timer = setInterval(()=>{
-    angle += speed;
-    speed *= 0.98;
+  let speed=Math.random()*0.3+0.25;
+  const t=setInterval(()=>{
+    angle+=speed;
+    speed*=0.985;
     draw();
-    if (speed < 0.002) {
-      clearInterval(timer);
+    if(speed<0.002){
+      clearInterval(t);
       timpani.pause();
-      boom.play();
-      fanfare.play();
-      spinning = false;
-      const index = Math.floor(((Math.PI*2 - angle + Math.PI/2)%(Math.PI*2))/((Math.PI*2)/items.length));
-      const hit = items[index];
-      document.getElementById('hitText').textContent = hit;
-      const h = document.getElementById('history');
-      const div = document.createElement('div');
-      div.className = 'history-item';
-      div.textContent = hit;
-      h.prepend(div);
-      while (h.children.length>10) h.removeChild(h.lastChild);
+      pafu.play();
+      spinning=false;
+      const idx=Math.floor(((Math.PI*2-angle+Math.PI/2)%(Math.PI*2))/((Math.PI*2)/items.length));
+      document.getElementById('hit').textContent=items[idx];
+      const h=document.getElementById('history');
+      const d=document.createElement('div');d.textContent=items[idx];h.prepend(d);
+      while(h.children.length>20)h.removeChild(h.lastChild);
+      draw(idx);
+      setTimeout(()=>draw(),400);
     }
   },16);
 }
-
-canvas.addEventListener('click', spin);
-
+canvas.onclick=spin;
+items.push('A','B','C');
 draw();
 </script>
 </body>
