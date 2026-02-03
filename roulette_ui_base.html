@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ルーレット</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+  background: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.app {
+  text-align: center;
+}
+
+.wheel-wrap {
+  position: relative;
+  width: 360px;
+  height: 360px;
+  margin: 0 auto;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.pointer {
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+}
+
+.result {
+  margin-top: 24px;
+  font-size: 28px;
+  font-weight: bold;
+}
+textarea {
+  margin-top: 24px;
+  width: 320px;
+  height: 100px;
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+  <div class="wheel-wrap">
+    <canvas id="wheel" width="360" height="360"></canvas>
+    <div class="pointer">▲</div>
+  </div>
+
+  <div class="result" id="result">―</div>
+
+  <textarea id="items" placeholder="改行で項目追加"></textarea>
+</div>
+
+<script>
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const resultEl = document.getElementById("result");
+const textarea = document.getElementById("items");
+
+let items = ["A", "B", "C"];
+let angle = 0;
+let spinning = false;
+
+function getItems() {
+  items = textarea.value.split("\n").filter(v => v.trim());
+  if (items.length === 0) items = ["A"];
+}
+
+textarea.addEventListener("input", () => {
+  getItems();
+  drawWheel();
+});
+
+function drawWheel() {
+  ctx.clearRect(0, 0, 360, 360);
+  const step = (Math.PI * 2) / items.length;
+
+  items.forEach((text, i) => {
+    ctx.beginPath();
+    ctx.moveTo(180, 180);
+    ctx.arc(180, 180, 180, step * i + angle, step * (i + 1) + angle);
+    ctx.closePath();
+    ctx.fillStyle = `hsl(${i * 360 / items.length}, 70%, 80%)`;
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(180, 180);
+    ctx.rotate(step * i + step / 2 + angle);
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "right";
+    ctx.font = "16px sans-serif";
+    ctx.fillText(text, 160, 6);
+    ctx.restore();
+  });
+}
+
+function spin() {
+  if (spinning) return;
+  spinning = true;
+  let speed = Math.random() * 0.3 + 0.25;
+
+  const timer = setInterval(() => {
+    angle += speed;
+    speed *= 0.98;
+    drawWheel();
+
+    if (speed < 0.002) {
+      clearInterval(timer);
+      spinning = false;
+      pickResult();
+    }
+  }, 16);
+}
+
+function pickResult() {
+  const step = (Math.PI * 2) / items.length;
+  const pointerAngle = (Math.PI * 1.5 - angle + Math.PI * 2) % (Math.PI * 2);
+  const index = Math.floor(pointerAngle / step);
+  resultEl.textContent = items[index];
+}
+
+canvas.addEventListener("click", spin);
+
+getItems();
+drawWheel();
+</script>
+</body>
+</html>
