@@ -7,127 +7,74 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
 <style>
 :root{--bg1:#fff;--bg2:#fff}
-body{
-  margin:0;min-height:100vh;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
-  background:linear-gradient(to bottom,var(--bg1),var(--bg2));
-  overflow:hidden;
-}
-#geom{position:fixed;inset:0;pointer-events:none;}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.tab{padding:6px 12px;border-radius:999px;border:1px solid #ccc;background:#fff;cursor:pointer}
+body{margin:0;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:linear-gradient(to bottom,var(--bg1),var(--bg2));overflow:hidden}
+#geom{position:fixed;inset:0;pointer-events:none;z-index:0}
+#layout{position:relative;z-index:1;width:100%;max-width:1200px;display:flex}
+#left{width:25%;display:flex;justify-content:flex-end;padding-right:12px}
+.tabs{display:flex;flex-direction:column;gap:8px}
+.tab{padding:10px 14px;border-radius:12px 0 0 12px;border:1px solid #ccc;border-right:none;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:6px}
 .tab.active{background:#333;color:#fff}
-textarea{width:90vw;max-width:420px;height:120px;border-radius:12px;padding:10px;font-size:14px}
-.controls{display:flex;gap:8px;margin:8px 0}
+.tab span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tab button{border:none;background:none;cursor:pointer;font-size:12px}
+#center{width:50%;display:flex;flex-direction:column;align-items:center}
+textarea{width:100%;max-width:420px;height:120px;border-radius:12px;padding:10px;font-size:14px}
+.controls{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap;justify-content:center}
 button{padding:10px 18px;border:none;border-radius:999px;background:#333;color:#fff;cursor:pointer}
 #wheelWrap{position:relative}
-canvas#wheel{width:360px;height:360px}
+canvas#wheel{width:380px;height:380px}
 #arrow{font-size:28px;margin-top:-4px}
-#result{font-family:'Montserrat',sans-serif;font-size:34px;font-weight:900;margin-top:6px;min-height:40px}
-#history{position:fixed;right:12px;bottom:12px;background:#fff;border-radius:16px;padding:10px;width:160px;font-size:12px}
-.history-item{display:flex;align-items:center;gap:6px;margin-bottom:4px}
-.color-chip{width:12px;height:12px;border-radius:50%}
+#result{font-family:'Montserrat',sans-serif;font-size:44px;font-weight:900;margin-top:10px;text-decoration:underline}
+#right{width:25%;padding-left:12px}
+#history{background:#fff;border-radius:20px;padding:14px;font-size:14px}
+.history-item{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.color-chip{width:14px;height:14px;border-radius:50%}
+#share{margin-top:10px;text-align:center}
+#qr{margin-top:6px}
 </style>
 </head>
 <body>
 <canvas id="geom"></canvas>
-
-<div class="tabs" id="tabs"></div>
-<textarea id="items" placeholder="例:\nルーレット1\nA\nB\nC"></textarea>
-<div class="controls">
-  <button onclick="spin()">回す</button>
-  <button onclick="resetAll()">やり直し</button>
-  <button onclick="toggleSound()" id="soundBtn">🔊</button>
+<div id="layout">
+  <div id="left"><div class="tabs" id="tabs"></div></div>
+  <div id="center">
+    <textarea id="items" placeholder="例:\nルーレット1\nA\nB\nC"></textarea>
+    <div class="controls">
+      <button onclick="spin()">回す</button>
+      <button onclick="resetAll()">やり直し</button>
+      <button onclick="toggleSound()" id="soundBtn">🔊</button>
+      <button onclick="generateURL()">URL生成</button>
+    </div>
+    <div id="wheelWrap"><canvas id="wheel" width="380" height="380"></canvas></div>
+    <div id="arrow">▲</div>
+    <div id="result"></div>
+    <div id="share"><div id="shareURL"></div><canvas id="qr"></canvas></div>
+  </div>
+  <div id="right"><div id="history"><strong>履歴</strong><div id="historyList"></div></div></div>
 </div>
-<div id="wheelWrap">
-  <canvas id="wheel" width="360" height="360"></canvas>
-</div>
-<div id="arrow">▲</div>
-<div id="result"></div>
-<div id="history"><strong>履歴</strong><div id="historyList"></div></div>
 <audio id="tick" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
-
 <script>
-// ===== 幾何学模様 =====
-const gcv=document.getElementById('geom'),gctx=gcv.getContext('2d');
-let geoms=[];
-function resizeGeom(){gcv.width=innerWidth;gcv.height=innerHeight}
-addEventListener('resize',resizeGeom);resizeGeom();
-function spawnGeom(){geoms.push({x:Math.random()*gcv.width,y:-20,size:6+Math.random()*10,speed:0.5+Math.random()*1.5,color:`hsl(${Math.random()*360},70%,80%)`,shape:Math.random()<.5?'c':'r'})}
-function drawGeom(){gctx.clearRect(0,0,gcv.width,gcv.height);if(Math.random()<0.3)spawnGeom();geoms.forEach(o=>{gctx.fillStyle=o.color;if(o.shape==='c'){gctx.beginPath();gctx.arc(o.x,o.y,o.size,0,Math.PI*2);gctx.fill()}else{gctx.fillRect(o.x,o.y,o.size,o.size)}o.y+=o.speed});geoms=geoms.filter(o=>o.y<gcv.height+20);requestAnimationFrame(drawGeom)}drawGeom();
+// 背景
+const gcv=document.getElementById('geom'),gctx=gcv.getContext('2d');let geoms=[];function resize(){gcv.width=innerWidth;gcv.height=innerHeight}addEventListener('resize',resize);resize();function spawn(){if(Math.random()<0.12)geoms.push({x:Math.random()*gcv.width,y:-20,s:6+Math.random()*8,spd:0.4+Math.random(),c:`hsl(${Math.random()*360},60%,85%)`,t:Math.random()<.5})}function drawBg(){gctx.clearRect(0,0,gcv.width,gcv.height);spawn();geoms.forEach(o=>{gctx.fillStyle=o.c;if(o.t){gctx.beginPath();gctx.arc(o.x,o.y,o.s,0,Math.PI*2);gctx.fill()}else gctx.fillRect(o.x,o.y,o.s,o.s);o.y+=o.spd});geoms=geoms.filter(o=>o.y<gcv.height+20);requestAnimationFrame(drawBg)}drawBg();
 
-// ===== ルーレット =====
-const canvas=document.getElementById('wheel'),ctx=canvas.getContext('2d');
-const colors=["#ffadad","#ffd6a5","#fdffb6","#caffbf","#9bf6ff","#a0c4ff","#bdb2ff"];
-let angle=0,spinning=false,soundOn=true;
-let history=[],activeTab=0;
-const presets=JSON.parse(localStorage.getItem('presets')||'[]');
-
-function parseItems(){
-  const lines=document.getElementById('items').value.split("\n").filter(Boolean);
-  if(lines.length<2) return {name:'',items:[]};
-  return {name:lines[0],items:lines.slice(1)};
-}
-
-function draw(items){
-  const r=canvas.width/2;ctx.clearRect(0,0,canvas.width,canvas.height);
-  const step=2*Math.PI/items.length;
-  items.forEach((t,i)=>{
-    ctx.beginPath();ctx.moveTo(r,r);
-    ctx.fillStyle=colors[i%colors.length];
-    ctx.arc(r,r,r,i*step+angle,(i+1)*step+angle);ctx.fill();
-    ctx.save();ctx.translate(r,r);ctx.rotate(i*step+step/2+angle);
-    ctx.textAlign='right';ctx.fillStyle='#333';ctx.font='14px sans-serif';
-    ctx.fillText(t,r-10,5);ctx.restore();
-  });
-}
-
-function spin(){
-  if(spinning) return;
-  const parsed=parseItems();const items=parsed.items;if(items.length<2) return;
-  spinning=true;let speed=0.35+Math.random()*0.25;
-  const tick=document.getElementById('tick');
-  const interval=setInterval(()=>{
-    angle+=speed;speed*=0.985;draw(items);
-    if(soundOn){tick.currentTime=0;tick.play()}
-    if(speed<0.002){
-      clearInterval(interval);spinning=false;
-      // ▲は下＝270度 → 外周が触れている位置で判定
-      const pointerAngle=(1.5*Math.PI-angle%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
-      const idx=Math.floor(pointerAngle/(2*Math.PI/items.length))%items.length;
-      const hit=items[idx],color=colors[idx%colors.length];
-      document.getElementById('result').textContent=hit;
-      document.body.style.setProperty('--bg1',color);
-      document.body.style.setProperty('--bg2','#fff');
-      history.unshift({hit,color});history=history.slice(0,10);renderHistory();
-    }
-  },16);
-}
-
-function renderHistory(){
-  const h=document.getElementById('historyList');h.innerHTML='';
-  history.forEach(i=>{const d=document.createElement('div');d.className='history-item';
-    d.innerHTML=`<span class="color-chip" style="background:${i.color}"></span>${i.hit}`;
-    h.appendChild(d)});
-}
-
+// ルーレット
+const canvas=document.getElementById('wheel'),ctx=canvas.getContext('2d');const colors=["#ffadad","#ffd6a5","#fdffb6","#caffbf","#9bf6ff","#a0c4ff","#bdb2ff"];let angle=0,spinning=false,soundOn=true;let history=[],activeTab=0;const presets=JSON.parse(localStorage.getItem('presets')||'[]');
+function parseItems(){const l=document.getElementById('items').value.split('\n').filter(Boolean);return l.length<2?{name:'',items:[]}:{name:l[0],items:l.slice(1)}}
+function draw(items){const r=canvas.width/2;ctx.clearRect(0,0,canvas.width,canvas.height);const step=2*Math.PI/items.length;items.forEach((t,i)=>{ctx.beginPath();ctx.moveTo(r,r);ctx.fillStyle=colors[i%colors.length];ctx.arc(r,r,r,i*step+angle,(i+1)*step+angle);ctx.fill();ctx.save();ctx.translate(r,r);ctx.rotate(i*step+step/2+angle);ctx.textAlign='right';ctx.fillStyle='#333';ctx.font='14px sans-serif';ctx.fillText(t,r-10,5);ctx.restore()})}
+function spin(){if(spinning)return;const p=parseItems(),items=p.items;if(items.length<2)return;spinning=true;let speed=0.35+Math.random()*0.25;const tick=document.getElementById('tick');const it=setInterval(()=>{angle+=speed;speed*=0.985;draw(items);if(soundOn){tick.currentTime=0;tick.play()}if(speed<0.002){clearInterval(it);spinning=false;const pa=(1.5*Math.PI-angle%(2*Math.PI)+2*Math.PI)%(2*Math.PI);const idx=Math.floor(pa/(2*Math.PI/items.length))%items.length;const hit=items[idx],col=colors[idx%colors.length];document.getElementById('result').textContent=hit;document.body.style.setProperty('--bg1',col);document.body.style.setProperty('--bg2','#fff');history.unshift({hit,col});history=history.slice(0,10);renderHistory()}},16)}
+function renderHistory(){const h=document.getElementById('historyList');h.innerHTML='';history.forEach(i=>{const d=document.createElement('div');d.className='history-item';d.innerHTML=`<span class="color-chip" style="background:${i.col}"></span>${i.hit}`;h.appendChild(d)})}
 function resetAll(){document.getElementById('result').textContent='';history=[];renderHistory();document.body.style.setProperty('--bg1','#fff')}
 function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
 
-function renderTabs(){
-  const t=document.getElementById('tabs');t.innerHTML='';
-  for(let i=0;i<5;i++){
-    const b=document.createElement('button');b.className='tab'+(i===activeTab?' active':'');
-    b.textContent=presets[i]?.name||('Tab '+(i+1));
-    b.onclick=()=>{
-      presets[activeTab]={name:parseItems().name,raw:document.getElementById('items').value};
-      activeTab=i;document.getElementById('items').value=presets[i]?.raw||'';
-      localStorage.setItem('presets',JSON.stringify(presets));renderTabs();
-    };t.appendChild(b);
-  }
-}
-renderTabs();draw(['A','B','C']);
+// タブ
+function renderTabs(){const t=document.getElementById('tabs');t.innerHTML='';for(let i=0;i<5;i++){const d=document.createElement('div');d.className='tab'+(i===activeTab?' active':'');const name=presets[i]?.name||('Tab '+(i+1));const span=document.createElement('span');span.textContent=name;span.onclick=()=>switchTab(i);const edit=document.createElement('button');edit.textContent='✏';edit.onclick=(e)=>{e.stopPropagation();const n=prompt('タブ名',name);if(n){presets[i]=presets[i]||{};presets[i].name=n;localStorage.setItem('presets',JSON.stringify(presets));renderTabs()}};d.appendChild(span);d.appendChild(edit);t.appendChild(d)}}
+function switchTab(i){presets[activeTab]={name:parseItems().name,raw:document.getElementById('items').value};activeTab=i;document.getElementById('items').value=presets[i]?.raw||'';localStorage.setItem('presets',JSON.stringify(presets));renderTabs()}
+
+// URL & QR
+function generateURL(){const data=encodeURIComponent(document.getElementById('items').value);const url=location.origin+location.pathname+'?d='+data;document.getElementById('shareURL').textContent=url;drawQR(url)}
+function drawQR(text){const c=document.getElementById('qr'),q=c.getContext('2d');c.width=120;c.height=120;q.clearRect(0,0,120,120);const bits=Array.from(text).map(ch=>ch.charCodeAt(0)%2);let i=0;for(let y=0;y<12;y++)for(let x=0;x<12;x++){q.fillStyle=bits[i++%bits.length]?'#000':'#fff';q.fillRect(x*10,y*10,10,10)}}
+
+// 初期
+const params=new URLSearchParams(location.search);if(params.get('d'))document.getElementById('items').value=decodeURIComponent(params.get('d'));renderTabs();draw(['A','B','C']);
 </script>
 </body>
 </html>
