@@ -10,14 +10,14 @@
 body{margin:0;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:linear-gradient(to bottom,var(--bg1),var(--bg2));overflow:hidden;}
 #geom{position:fixed;inset:0;pointer-events:none;z-index:0}
 #layout{position:relative;z-index:1;width:90%;max-width:900px;display:flex;gap:12px;justify-content:center;transform:scale(0.9);}
-#left{width:25%;display:flex;flex-direction:column;justify-content:flex-end;padding-right:12px;align-items:flex-start}
+#left{width:25%;display:flex;flex-direction:column;justify-content:flex-start;padding-right:12px;align-items:flex-start}
+#volumeWrapper{display:flex;align-items:center;margin-bottom:12px}
+#volumeSlider{width:120px}
 .tabs{display:flex;flex-direction:column;gap:12px}
 .tab{padding:14px 18px;border-radius:0;border:2px solid green;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:18px}
-.tab.active{background:#333;color:#fff}
+.tab.active{background:#7FD4C9;border-radius:12px;color:#000}
 .tab span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tab button{border:none;background:none;cursor:pointer;font-size:14px}
-#volumeWrapper{writing-mode:bt-lr;display:flex;align-items:center;height:120px;margin-bottom:12px}
-#volumeSlider{width:120px}
 #center{width:50%;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
 textarea{width:100%;max-width:420px;height:120px;border-radius:12px;padding:10px;font-size:14px}
 #wheelWrap{position:relative}
@@ -39,12 +39,14 @@ button{padding:12px 18px;border:none;border-radius:999px;background:#333;color:#
 <canvas id="geom"></canvas>
 <div id="layout">
   <div id="left">
-    <div id="volumeWrapper"><input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1"></div>
+    <div id="volumeWrapper">
+      <button onclick="toggleSound()" id="soundBtn">🔊</button>
+      <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1">
+    </div>
     <div class="tabs" id="tabs"></div>
     <div id="leftButtons">
       <button onclick="generateURL()">URL生成</button>
       <div id="shareWrapper"><input type="text" id="shareURL" readonly><button onclick="copyURL()">コピー</button></div>
-      <button onclick="toggleSound()" id="soundBtn">🔊</button>
     </div>
   </div>
   <div id="center">
@@ -80,7 +82,7 @@ const volSlider=document.getElementById('volumeSlider');
 volSlider.addEventListener('input',()=>{volume=parseFloat(volSlider.value)})
 
 function spin(){if(spinning)return;const items=parseItems();if(items.length<2)return;spinning=true;let speed=0.35+Math.random()*0.25;let prevIdx=-1;const it=setInterval(()=>{angle+=speed;speed*=0.985;draw(items);
-  const pa=(1.5*Math.PI-angle%(2*Math.PI)+2*Math.PI)%(2*Math.PI); // 下側判定
+  const pa=(1.5*Math.PI-angle%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
   const idx=Math.floor(pa/(2*Math.PI/items.length))%items.length;
   if(idx!==prevIdx){drum.currentTime=0;drum.volume=volume;drum.play();prevIdx=idx}
   if(speed<0.002){clearInterval(it);spinning=false;
