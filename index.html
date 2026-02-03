@@ -7,48 +7,44 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
 <style>
 :root{--bg1:#fff;--bg2:#fff}
-body{margin:0;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:linear-gradient(to bottom,var(--bg1),var(--bg2));overflow:hidden}
+body{margin:0;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:linear-gradient(to bottom,var(--bg1),var(--bg2));overflow:hidden;}
 #geom{position:fixed;inset:0;pointer-events:none;z-index:0}
-#layout{position:relative;z-index:1;width:100%;max-width:900px;display:flex;gap:16px;justify-content:center}
-#left{width:25%;display:flex;flex-direction:column;justify-content:flex-end;padding-right:12px}
+#layout{position:relative;z-index:1;width:90%;max-width:900px;display:flex;gap:12px;justify-content:center;transform:scale(0.9);}
+#left{width:25%;display:flex;flex-direction:column;justify-content:flex-end;padding-right:12px;align-items:flex-start}
 .tabs{display:flex;flex-direction:column;gap:12px}
-.tab{padding:16px 20px;border-radius:12px 0 0 12px;border:2px solid green;border-right:none;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:18px}
+.tab{padding:14px 18px;border-radius:0;border:2px solid green;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:18px}
 .tab.active{background:#333;color:#fff}
 .tab span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tab button{border:none;background:none;cursor:pointer;font-size:14px}
+#volumeWrapper{writing-mode:bt-lr;display:flex;align-items:center;height:120px;margin-bottom:12px}
+#volumeSlider{width:120px}
 #center{width:50%;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
 textarea{width:100%;max-width:420px;height:120px;border-radius:12px;padding:10px;font-size:14px}
 #wheelWrap{position:relative}
-canvas#wheel{width:380px;height:380px;cursor:pointer}
+canvas#wheel{width:380px;height:380px;cursor:pointer;background:#fff}
 #startText{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;color:rgba(0,0,0,0.15);pointer-events:none;font-family:'Montserrat',sans-serif;font-weight:900}
 #arrow{font-size:28px;margin-top:-4px}
 #result{font-family:'Montserrat',sans-serif;font-size:52px;font-weight:900;margin-top:10px;text-decoration:underline}
 #right{width:25%;padding-left:12px;display:flex;flex-direction:column;justify-content:flex-start}
-#history{background:#fff;border:2px solid red;border-radius:20px;padding:14px;font-size:24px;flex-grow:1;display:flex;flex-direction:column;overflow-y:auto}
+#history{background:#fff;border-radius:0;padding:14px;font-size:24px;flex-grow:1;display:flex;flex-direction:column;overflow-y:auto}
 .history-item{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .color-chip{width:18px;height:18px;border-radius:50%}
 #leftButtons{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-#volumeControl{display:flex;align-items:center;gap:8px;width:100%}
-#volumeSlider{flex:1}
-button{padding:14px 20px;border:none;border-radius:999px;background:#333;color:#fff;cursor:pointer;font-size:16px}
 #shareWrapper{display:flex;align-items:center;gap:8px;margin-top:8px}
 #shareURL{flex:1;border:none;background:#eee;padding:6px;border-radius:8px;font-size:14px}
+button{padding:12px 18px;border:none;border-radius:999px;background:#333;color:#fff;cursor:pointer;font-size:16px}
 </style>
 </head>
 <body>
 <canvas id="geom"></canvas>
 <div id="layout">
   <div id="left">
+    <div id="volumeWrapper"><input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1"></div>
     <div class="tabs" id="tabs"></div>
     <div id="leftButtons">
       <button onclick="generateURL()">URL生成</button>
       <div id="shareWrapper"><input type="text" id="shareURL" readonly><button onclick="copyURL()">コピー</button></div>
       <button onclick="toggleSound()" id="soundBtn">🔊</button>
-      <div id="volumeControl">
-        <span>🔈</span>
-        <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1">
-        <span>🔊</span>
-      </div>
     </div>
   </div>
   <div id="center">
