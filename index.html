@@ -1,130 +1,153 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ルレット</title>
 
 <style>
-body {
-  margin: 0;
-  background: white;
-  font-family: sans-serif;
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:#fff;
+  font-family:system-ui, sans-serif;
 }
-
-/* 全体レイアウト */
-.wrapper {
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.app{
+  width:100vw;
+  max-width:1600px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:1fr 2fr 1fr;
+  gap:24px;
+  padding:24px 24px 96px;
 }
-
-/* 結果表示（上） */
-#result {
-  margin-top: 40px;
-  margin-bottom: 20px;
-  font-size: 32px;
-  font-weight: bold;
+.center{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
 }
-
-/* ルーレット位置（下にずらす） */
-.roulette-area {
-  margin-top: 40px;
+canvas{
+  width:420px;
+  height:420px;
+  cursor:pointer;
 }
-
-canvas {
-  cursor: pointer;
+#hit{
+  font-size:40px;
+  font-weight:700;
+  margin-top:16px;
+  text-decoration:underline;
 }
+.history{
+  border:2px solid red;
+  border-radius:12px;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.history div{font-size:22px;}
 </style>
 </head>
 
 <body>
+<div class="app">
+  <div></div>
 
-<div class="wrapper">
-
-  <!-- 結果表示はここ（上） -->
-  <div id="result">▼ 抽選結果 ▼</div>
-
-  <!-- ルーレットは下 -->
-  <div class="roulette-area">
-    <canvas id="roulette" width="400" height="400"></canvas>
+  <div class="center">
+    <canvas id="wheel" width="420" height="420"></canvas>
+    <div id="hit">—</div>
   </div>
 
+  <div class="history" id="history"></div>
 </div>
 
 <script>
-const canvas = document.getElementById("roulette");
+const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
-const resultEl = document.getElementById("result");
+const hitEl = document.getElementById("hit");
+const historyEl = document.getElementById("history");
 
-const items = ["A", "B", "C"];
+const items = ["A","B","C"];
 let angle = 0;
-let speed = 0;
 let spinning = false;
 
-function draw(hit = -1) {
-  const cx = 200;
-  const cy = 200;
-  const r = 170;
-  const step = Math.PI * 2 / items.length;
+function draw(hitIndex=null){
+  ctx.clearRect(0,0,420,420);
 
-  ctx.clearRect(0, 0, 400, 400);
+  const cx = 210;
+  const cy = 210;
+  const r = 200;
+  const step = Math.PI*2/items.length;
 
-  items.forEach((t, i) => {
-    const start = angle + i * step;
+  items.forEach((t,i)=>{
+    const start = angle + i*step;
     const end = start + step;
 
     ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, r, start, end);
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,end);
     ctx.closePath();
-    ctx.fillStyle = i === hit ? "#ffb3b3" : "#cceeff";
+    ctx.fillStyle = (i===hitIndex) ? "#ffb3b3" : "#cceeff";
     ctx.fill();
-    ctx.strokeStyle = "#fff";
+    ctx.strokeStyle="#fff";
     ctx.stroke();
 
     ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(start + step / 2);
-    ctx.textAlign = "right";
-    ctx.font = "16px sans-serif";
-    ctx.fillStyle = "#333";
-    ctx.fillText(t, r - 10, 5);
+    ctx.translate(cx,cy);
+    ctx.rotate(start + step/2);
+    ctx.textAlign="right";
+    ctx.fillStyle="#333";
+    ctx.font="18px sans-serif";
+    ctx.fillText(t,r-14,6);
     ctx.restore();
   });
 
-  /* ▼ 上の判定マーク */
+  // ▼ 下の判定マーク
+  ctx.fillStyle="#000";
   ctx.beginPath();
-  ctx.moveTo(cx - 12, cy - r - 28);
-  ctx.lineTo(cx + 12, cy - r - 28);
-  ctx.lineTo(cx, cy - r - 8);
-  ctx.fillStyle = "#000";
+  ctx.moveTo(cx-12, cy+r+8);
+  ctx.lineTo(cx+12, cy+r+8);
+  ctx.lineTo(cx, cy+r+28);
   ctx.fill();
+
+  // 抽選開始テキスト
+  ctx.fillStyle="rgba(0,0,0,0.25)";
+  ctx.font="26px sans-serif";
+  ctx.textAlign="center";
+  ctx.fillText("抽選開始", cx, cy+8);
 }
 
-function getHitIndex() {
-  const step = Math.PI * 2 / items.length;
-  const pointerAngle =
-    (Math.PI * 1.5 - angle + Math.PI * 2) % (Math.PI * 2);
+function getHitIndex(){
+  // 6時方向（下）＝ 90度
+  const pointerAngle = (Math.PI/2 - angle + Math.PI*2) % (Math.PI*2);
+  const step = Math.PI*2/items.length;
   return Math.floor(pointerAngle / step);
 }
 
-function spin() {
-  if (spinning) return;
+function spin(){
+  if(spinning) return;
   spinning = true;
-  speed = Math.random() * 0.4 + 0.3;
-  resultEl.textContent = "抽選中…";
 
-  function loop() {
+  let speed = Math.random()*0.3 + 0.25;
+
+  function loop(){
     angle += speed;
     speed *= 0.985;
 
-    if (speed < 0.002) {
+    if(speed < 0.002){
       spinning = false;
       const hit = getHitIndex();
+      hitEl.textContent = items[hit];
+
+      const d = document.createElement("div");
+      d.textContent = items[hit];
+      historyEl.prepend(d);
+      while(historyEl.children.length > 20){
+        historyEl.removeChild(historyEl.lastChild);
+      }
+
       draw(hit);
-      resultEl.textContent = "▼ 結果： " + items[hit] + " ▼";
+      setTimeout(()=>draw(),400);
       return;
     }
     draw();
@@ -136,6 +159,5 @@ function spin() {
 canvas.addEventListener("click", spin);
 draw();
 </script>
-
 </body>
 </html>
