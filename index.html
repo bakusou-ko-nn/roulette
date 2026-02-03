@@ -15,8 +15,8 @@ body {
   font-family: sans-serif;
 }
 #result {
-  font-size: 28px;
-  margin-bottom: 10px;
+  font-size: 30px;
+  margin-bottom: 12px;
   font-weight: bold;
 }
 canvas {
@@ -70,19 +70,20 @@ function draw(hit = -1) {
     ctx.restore();
   });
 
-  // ▲ 上の判定マーク
+  // ▼ 上の判定マーク
   ctx.beginPath();
-  ctx.moveTo(cx - 12, cy - r - 8);
-  ctx.lineTo(cx + 12, cy - r - 8);
-  ctx.lineTo(cx, cy - r - 28);
+  ctx.moveTo(cx - 12, cy - r - 28);
+  ctx.lineTo(cx + 12, cy - r - 28);
+  ctx.lineTo(cx, cy - r - 8);
   ctx.fillStyle = "#000";
   ctx.fill();
 }
 
 function getHitIndex() {
   const step = Math.PI * 2 / items.length;
-  const pointer = (Math.PI * 1.5 + angle) % (Math.PI * 2);
-  return Math.floor(pointer / step);
+  // 上（12時）を判定位置にする
+  const pointerAngle = (Math.PI * 1.5 - angle + Math.PI * 2) % (Math.PI * 2);
+  return Math.floor(pointerAngle / step);
 }
 
 function spin() {
@@ -99,7 +100,7 @@ function spin() {
       spinning = false;
       const hit = getHitIndex();
       draw(hit);
-      resultEl.textContent = "結果： " + items[hit];
+      resultEl.textContent = "▼ 結果： " + items[hit] + " ▼";
       return;
     }
     draw();
