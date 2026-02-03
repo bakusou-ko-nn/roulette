@@ -1,258 +1,94 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ルレット</title>
-
-<style>
-  body {
-    margin: 0;
-    font-family: "Rounded Mplus 1c", system-ui, sans-serif;
-    background: #eaffea;
-  }
-
-  .app {
-    display: grid;
-    grid-template-columns: 1fr 2fr 1fr;
-    gap: 24px;
-    padding: 24px;
-    max-width: 1200px;
-    margin: auto;
-  }
-
-  /* 左 */
-  .left {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .volume {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .tabs {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .tab {
-    padding: 12px;
-    border: 2px solid #3aa87c;
-    border-radius: 8px;
-    cursor: pointer;
-    background: #fff;
-  }
-
-  .tab.active {
-    background: #c9f0e6;
-  }
-
-  textarea {
-    width: 100%;
-    height: 120px;
-    padding: 12px;
-    border-radius: 12px;
-    border: none;
-    font-size: 16px;
-    resize: none;
-  }
-
-  .url-box {
-    margin-top: auto;
-  }
-
-  button {
-    padding: 10px 16px;
-    border-radius: 999px;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-  }
-
-  /* 中央 */
-  .center {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .wheel-wrap {
-    position: relative;
-  }
-
-  canvas {
-    background: #fff;
-    border-radius: 50%;
-  }
-
-  .start-text {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    color: rgba(0,0,0,0.25);
-    pointer-events: none;
-  }
-
-  .indicator {
-    text-align: center;
-    font-size: 28px;
-    margin-top: -6px;
-  }
-
-  .result {
-    font-size: 40px;
-    font-weight: bold;
-    text-decoration: underline;
-    margin-top: 8px;
-  }
-
-  /* 右 */
-  .right {
-    border: 2px solid red;
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .history {
-    flex: 1;
-    overflow-y: auto;
-    font-size: 20px;
-  }
-</style>
-</head>
-
-<body>
-<div class="app">
-
-  <!-- 左 -->
-  <div class="left">
-    <div class="volume">
-      🔊
-      <input type="range" min="0" max="1" step="0.01" value="0.5" />
-    </div>
-
-    <div class="tabs">
-      <div class="tab active">Tab 1 ✏️</div>
-      <div class="tab">Tab 2 ✏️</div>
-      <div class="tab">Tab 3 ✏️</div>
-      <div class="tab">Tab 4 ✏️</div>
-      <div class="tab">Tab 5 ✏️</div>
-    </div>
-
-    <textarea id="words">A
-B
-C</textarea>
-
-    <div class="url-box">
-      <button>URL生成</button>
-    </div>
-  </div>
-
-  <!-- 中央 -->
-  <div class="center">
-    <div class="wheel-wrap">
-      <canvas id="wheel" width="420" height="420"></canvas>
-      <div class="start-text">抽選開始</div>
-    </div>
-
-    <div class="indicator">▲</div>
-    <div class="result" id="result">―</div>
-  </div>
-
-  <!-- 右 -->
-  <div class="right">
-    <strong>履歴</strong>
-    <div class="history" id="history"></div>
-  </div>
-
-</div>
-
 <script>
-const canvas = document.getElementById("wheel");
+const canvas = document.getElementById("roulette");
 const ctx = canvas.getContext("2d");
-const resultEl = document.getElementById("result");
-const historyEl = document.getElementById("history");
-const textarea = document.getElementById("words");
 
-let rotation = 0;
+let items = ["A", "B", "C"];
+let angle = 0;
 let spinning = false;
-let history = [];
+let velocity = 0;
 
-function getWords() {
-  return textarea.value.split("\n").map(v => v.trim()).filter(Boolean);
-}
+function drawRoulette(highlightIndex = null) {
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const r = canvas.width / 2 - 10;
+  const step = (Math.PI * 2) / items.length;
 
-function drawWheel(highlightIndex = null) {
-  const words = getWords();
-  const r = canvas.width / 2;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  words.forEach((word, i) => {
-    const angle = (Math.PI * 2 / words.length) * i + rotation;
-    ctx.beginPath();
-    ctx.moveTo(r, r);
-    ctx.arc(r, r, r, angle, angle + Math.PI * 2 / words.length);
-    ctx.closePath();
-    ctx.fillStyle = i === highlightIndex ? "#7fe0ff" : ["#ffd1dc","#fff5a5","#caffbf","#ffdfba"][i % 4];
-    ctx.fill();
+  items.forEach((text, i) => {
+    const start = angle + step * i;
+    const end = start + step;
 
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.closePath();
+
+    ctx.fillStyle =
+      i === highlightIndex
+        ? "rgb(255,190,190)" // 当たり（少し濃いパステル）
+        : `hsl(${(i * 360) / items.length}, 70%, 85%)`;
+
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.stroke();
+
+    // 文字
     ctx.save();
-    ctx.translate(r, r);
-    ctx.rotate(angle + Math.PI / words.length);
-    ctx.fillStyle = "#000";
+    ctx.translate(cx, cy);
+    ctx.rotate(start + step / 2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#333";
     ctx.font = "16px sans-serif";
-    ctx.fillText(word, r * 0.65, 5);
+    ctx.fillText(text, r - 10, 5);
     ctx.restore();
   });
+
+  // ▼（下の判定マーカー）
+  ctx.fillStyle = "#000";
+  ctx.beginPath();
+  ctx.moveTo(cx - 10, cy + r + 5);
+  ctx.lineTo(cx + 10, cy + r + 5);
+  ctx.lineTo(cx, cy + r + 25);
+  ctx.closePath();
+  ctx.fill();
 }
 
-drawWheel();
+function getHitIndex() {
+  const step = (Math.PI * 2) / items.length;
 
-canvas.addEventListener("click", () => {
+  // ▼は「下（6時）」＝ 90度（Math.PI / 2）
+  let pointerAngle = (Math.PI / 2 - angle) % (Math.PI * 2);
+  if (pointerAngle < 0) pointerAngle += Math.PI * 2;
+
+  return Math.floor(pointerAngle / step);
+}
+
+function spin() {
   if (spinning) return;
   spinning = true;
+  velocity = Math.random() * 0.3 + 0.35;
 
-  const words = getWords();
-  const target = Math.floor(Math.random() * words.length);
-  const anglePer = (Math.PI * 2) / words.length;
-  const targetAngle = Math.PI * 1.5 - (target + 0.5) * anglePer;
+  function animate() {
+    angle += velocity;
+    velocity *= 0.985;
 
-  const start = rotation;
-  const end = rotation + Math.PI * 6 + targetAngle;
-
-  const startTime = performance.now();
-  const duration = 2000;
-
-  function animate(t) {
-    const p = Math.min((t - startTime) / duration, 1);
-    rotation = start + (end - start) * p;
-    drawWheel();
-    if (p < 1) {
-      requestAnimationFrame(animate);
-    } else {
+    if (velocity < 0.002) {
       spinning = false;
-      drawWheel(target);
-      resultEl.textContent = words[target];
-      history.unshift(words[target]);
-      history = history.slice(0, 20);
-      historyEl.innerHTML = history.map(v => `<div>${v}</div>`).join("");
+      const hit = getHitIndex();
+      drawRoulette(hit);
+      return;
     }
+
+    drawRoulette();
+    requestAnimationFrame(animate);
   }
 
-  requestAnimationFrame(animate);
-});
+  animate();
+}
+
+canvas.addEventListener("click", spin);
+
+// 初期描画
+drawRoulette();
 </script>
-</body>
-</html>
