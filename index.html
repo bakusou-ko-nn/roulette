@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Roulette</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
 <style>
@@ -12,7 +12,7 @@ body{margin:0;min-height:100vh;display:flex;justify-content:center;align-items:c
 #layout{position:relative;z-index:1;width:100%;max-width:1200px;display:flex;gap:16px}
 #left{width:25%;display:flex;justify-content:flex-end;padding-right:12px}
 .tabs{display:flex;flex-direction:column;gap:12px}
-.tab{padding:14px 18px;border-radius:12px 0 0 12px;border:1px solid #ccc;border-right:none;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:16px}
+.tab{padding:14px 18px;border-radius:12px 0 0 12px;border:2px solid green;border-right:none;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:16px}
 .tab.active{background:#333;color:#fff}
 .tab span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tab button{border:none;background:none;cursor:pointer;font-size:14px}
@@ -25,7 +25,7 @@ canvas#wheel{width:380px;height:380px;cursor:pointer}
 #arrow{font-size:28px;margin-top:-4px}
 #result{font-family:'Montserrat',sans-serif;font-size:48px;font-weight:900;margin-top:10px;text-decoration:underline}
 #right{width:25%;padding-left:12px}
-#history{background:#fff;border-radius:20px;padding:14px;font-size:18px}
+#history{background:#fff;border:2px solid red;border-radius:20px;padding:14px;font-size:18px}
 .history-item{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .color-chip{width:18px;height:18px;border-radius:50%}
 #share{position:absolute;bottom:16px;left:16px;background:#fff;padding:8px 12px;border-radius:12px;display:flex;gap:8px;align-items:center}
@@ -41,6 +41,7 @@ canvas#wheel{width:380px;height:380px;cursor:pointer}
     <textarea id="items" placeholder="1行につき1単語"></textarea>
     <div class="controls" id="controls">
       <button onclick="spin()">回す</button>
+      <button onclick="toggleSound()" id="soundBtn">🔊</button>
     </div>
     <div id="wheelWrap"><canvas id="wheel" width="380" height="380" onclick="spin()"></canvas></div>
     <div id="arrow">▲</div>
@@ -54,9 +55,10 @@ canvas#wheel{width:380px;height:380px;cursor:pointer}
   <canvas id="qr"></canvas>
 </div>
 <audio id="tick" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
+<audio id="celebrate" src="https://assets.mixkit.co/active_storage/sfx/1657/1657-preview.mp3"></audio>
 <script>
 // 背景
-const gcv=document.getElementById('geom'),gctx=gcv.getContext('2d');let geoms=[];function resize(){gcv.width=innerWidth;gcv.height=innerHeight}addEventListener('resize',resize);resize();function spawn(){if(Math.random()<0.12)geoms.push({x:Math.random()*gcv.width,y:-20,s:6+Math.random()*8,spd:0.4+Math.random(),c:`hsl(${Math.random()*360},60%,85%)`,t:Math.random()<.5})}function drawBg(){gctx.clearRect(0,0,gcv.width,gcv.height);spawn();geoms.forEach(o=>{gctx.fillStyle=o.c;if(o.t){gctx.beginPath();gctx.arc(o.x,o.y,o.s,0,Math.PI*2);gctx.fill()}else gctx.fillRect(o.x,o.y,o.s,o.s);o.y+=o.spd});geoms=geoms.filter(o=>o.y<gcv.height+20);requestAnimationFrame(drawBg)}drawBg();
+const gcv=document.getElementById('geom'),gctx=gcv.getContext('2d');let geoms=[];function resize(){gcv.width=innerWidth;gcv.height=innerHeight}addEventListener('resize',resize);resize();function spawn(){if(Math.random()<0.08)geoms.push({x:Math.random()*gcv.width,y:-20,s:6+Math.random()*6,spd:0.4+Math.random(),c:`hsl(${Math.random()*360},60%,85%)`,t:Math.random()<.5})}function drawBg(){gctx.clearRect(0,0,gcv.width,gcv.height);spawn();geoms.forEach(o=>{gctx.fillStyle=o.c;if(o.t){gctx.beginPath();gctx.arc(o.x,o.y,o.s,0,Math.PI*2);gctx.fill()}else gctx.fillRect(o.x,o.y,o.s,o.s);o.y+=o.spd});geoms=geoms.filter(o=>o.y<gcv.height+20);requestAnimationFrame(drawBg)}drawBg();
 
 // ルーレット
 const canvas=document.getElementById('wheel'),ctx=canvas.getContext('2d');
@@ -69,7 +71,9 @@ function parseItems(){return document.getElementById('items').value.split('\n').
 
 function draw(items){const r=canvas.width/2;ctx.clearRect(0,0,canvas.width,canvas.height);const step=2*Math.PI/items.length;items.forEach((t,i)=>{ctx.beginPath();ctx.moveTo(r,r);ctx.fillStyle=colors[i%colors.length];ctx.arc(r,r,r,i*step+angle,(i+1)*step+angle);ctx.fill();ctx.save();ctx.translate(r,r);ctx.rotate(i*step+step/2+angle);ctx.textAlign='right';ctx.fillStyle='#333';ctx.font='14px sans-serif';ctx.fillText(t,r-10,5);ctx.restore()})}
 
-function spin(){if(spinning)return;const items=parseItems();if(items.length<2)return;spinning=true;let speed=0.35+Math.random()*0.25;const tick=document.getElementById('tick');const it=setInterval(()=>{angle+=speed;speed*=0.985;draw(items);if(soundOn){tick.currentTime=0;tick.play()}if(speed<0.002){clearInterval(it);spinning=false;
+function explodeEffect(col){for(let i=0;i<20;i++){geoms.push({x:canvas.width/2,y:canvas.height/2,s:4+Math.random()*6,spd:1+Math.random()*2,c:col,t:Math.random()<.5})}}
+
+function spin(){if(spinning)return;const items=parseItems();if(items.length<2)return;spinning=true;let speed=0.35+Math.random()*0.25;const tick=document.getElementById('tick');const celebrate=document.getElementById('celebrate');const it=setInterval(()=>{angle+=speed;speed*=0.985;draw(items);if(soundOn){tick.currentTime=0;tick.play()}if(speed<0.002){clearInterval(it);spinning=false;
   const pa=(0.5*Math.PI-angle%(2*Math.PI)+2*Math.PI)%(2*Math.PI); // 下側判定
   const idx=Math.floor(pa/(2*Math.PI/items.length))%items.length;
   const hit=items[idx],col=colors[idx%colors.length];
@@ -77,6 +81,8 @@ function spin(){if(spinning)return;const items=parseItems();if(items.length<2)re
   document.getElementById('result').style.fontSize='48px';
   document.body.style.setProperty('--bg1',col);
   document.body.style.setProperty('--bg2','#fff');
+  explodeEffect(col);
+  celebrate.currentTime=0;celebrate.play();
   history.unshift({hit,col});history=history.slice(0,10);
   renderHistory();
 }},16)}
