@@ -10,75 +10,85 @@
 body{margin:0;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:linear-gradient(to bottom,var(--bg1),var(--bg2));overflow:hidden}
 #geom{position:fixed;inset:0;pointer-events:none;z-index:0}
 #layout{position:relative;z-index:1;width:100%;max-width:1200px;display:flex;gap:16px}
-#left{width:25%;display:flex;justify-content:flex-end;padding-right:12px}
+#left{width:25%;display:flex;flex-direction:column;justify-content:flex-end;padding-right:12px}
 .tabs{display:flex;flex-direction:column;gap:12px}
 .tab{padding:16px 20px;border-radius:12px 0 0 12px;border:2px solid green;border-right:none;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:18px}
 .tab.active{background:#333;color:#fff}
 .tab span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tab button{border:none;background:none;cursor:pointer;font-size:14px}
-#center{width:50%;display:flex;flex-direction:column;align-items:center;gap:8px}
+#center{width:50%;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
 textarea{width:100%;max-width:420px;height:120px;border-radius:12px;padding:10px;font-size:14px}
-.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;position:absolute;top:50%;transform:translateY(-50%)}
-button{padding:14px 20px;border:none;border-radius:999px;background:#333;color:#fff;cursor:pointer;font-size:16px}
 #wheelWrap{position:relative}
 canvas#wheel{width:380px;height:380px;cursor:pointer}
+#startText{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;color:rgba(0,0,0,0.15);pointer-events:none;font-family:'Montserrat',sans-serif;font-weight:900}
 #arrow{font-size:28px;margin-top:-4px}
 #result{font-family:'Montserrat',sans-serif;font-size:48px;font-weight:900;margin-top:10px;text-decoration:underline}
-#right{width:25%;padding-left:12px;display:flex;flex-direction:column;justify-content:flex-end}
-#history{background:#fff;border:2px solid red;border-radius:20px;padding:14px;font-size:20px;margin-top:auto}
+#right{width:25%;padding-left:12px;display:flex;flex-direction:column;justify-content:flex-start}
+#history{background:#fff;border:2px solid red;border-radius:20px;padding:14px;font-size:24px;margin-top:auto}
 .history-item{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .color-chip{width:18px;height:18px;border-radius:50%}
-#share{position:absolute;bottom:16px;right:16px;background:#fff;padding:12px;border-radius:12px;display:flex;gap:8px;align-items:center;flex-direction:column}
-#qr{width:100px;height:100px}
+#leftButtons{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+#volumeControl{display:flex;align-items:center;gap:8px;width:100%}
+#volumeSlider{flex:1}
+button{padding:14px 20px;border:none;border-radius:999px;background:#333;color:#fff;cursor:pointer;font-size:16px}
 #share input{border:none;background:none;font-size:14px;width:200px} 
 </style>
 </head>
 <body>
 <canvas id="geom"></canvas>
 <div id="layout">
-  <div id="left"><div class="tabs" id="tabs"></div></div>
+  <div id="left">
+    <div class="tabs" id="tabs"></div>
+    <div id="leftButtons">
+      <button onclick="generateURL()">URL生成</button>
+      <button onclick="copyURL()">コピー</button>
+      <button onclick="toggleSound()" id="soundBtn">🔊</button>
+      <div id="volumeControl">
+        <span>🔈</span>
+        <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1">
+        <span>🔊</span>
+      </div>
+    </div>
+  </div>
   <div id="center">
     <textarea id="items" placeholder="1行につき1単語"></textarea>
-    <div class="controls" id="controls">
-      <button onclick="spin()">回す</button>
+    <div id="wheelWrap">
+      <canvas id="wheel" width="380" height="380"></canvas>
+      <div id="startText">抽選開始</div>
     </div>
-    <div id="wheelWrap"><canvas id="wheel" width="380" height="380" onclick="spin()"></canvas></div>
     <div id="arrow">▲</div>
     <div id="result"></div>
   </div>
-  <div id="right"><div id="history"><strong>履歴</strong><div id="historyList"></div></div></div>
+  <div id="right">
+    <div id="history"><strong>履歴</strong><div id="historyList"></div></div>
+  </div>
 </div>
 <div id="share">
-  <input type="text" id="shareURL" readonly />
-  <button onclick="generateURL()">URL生成</button>
-  <button onclick="copyURL()">コピー</button>
-  <button onclick="toggleSound()" id="soundBtn">🔊</button>
   <canvas id="qr"></canvas>
 </div>
-<audio id="tick" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
 <audio id="drum" src="https://assets.mixkit.co/active_storage/sfx/2146/2146-preview.mp3"></audio>
 <audio id="celebrate" src="https://assets.mixkit.co/active_storage/sfx/1657/1657-preview.mp3"></audio>
 <script>
-// 背景
 const gcv=document.getElementById('geom'),gctx=gcv.getContext('2d');let geoms=[];function resize(){gcv.width=innerWidth;gcv.height=innerHeight}addEventListener('resize',resize);resize();function spawn(){if(Math.random()<0.08)geoms.push({x:Math.random()*gcv.width,y:-20,s:6+Math.random()*6,spd:0.4+Math.random(),c:`hsl(${Math.random()*360},60%,85%)`,t:Math.random()<.5})}function drawBg(){gctx.clearRect(0,0,gcv.width,gcv.height);spawn();geoms.forEach(o=>{gctx.fillStyle=o.c;if(o.t){gctx.beginPath();gctx.arc(o.x,o.y,o.s,0,Math.PI*2);gctx.fill()}else gctx.fillRect(o.x,o.y,o.s,o.s);o.y+=o.spd});geoms=geoms.filter(o=>o.y<gcv.height+20);requestAnimationFrame(drawBg)}drawBg();
 
-// ルーレット
 const canvas=document.getElementById('wheel'),ctx=canvas.getContext('2d');
 const colors=["#ffadad","#ffd6a5","#fdffb6","#caffbf","#9bf6ff","#a0c4ff","#bdb2ff"];
-let angle=0,spinning=false,soundOn=true;
+let angle=0,spinning=false,soundOn=true,volume=1;
 let history=[],activeTab=0;
 const presets=JSON.parse(localStorage.getItem('presets')||'[]');
-
 function parseItems(){return document.getElementById('items').value.split('\n').filter(Boolean)}
-
 function draw(items){const r=canvas.width/2;ctx.clearRect(0,0,canvas.width,canvas.height);const step=2*Math.PI/items.length;items.forEach((t,i)=>{ctx.beginPath();ctx.moveTo(r,r);ctx.fillStyle=colors[i%colors.length];ctx.arc(r,r,r,i*step+angle,(i+1)*step+angle);ctx.fill();ctx.save();ctx.translate(r,r);ctx.rotate(i*step+step/2+angle);ctx.textAlign='right';ctx.fillStyle='#333';ctx.font='14px sans-serif';ctx.fillText(t,r-10,5);ctx.restore()})}
-
 function explodeEffect(col){for(let i=0;i<20;i++){geoms.push({x:canvas.width/2,y:canvas.height/2,s:4+Math.random()*6,spd:1+Math.random()*2,c:col,t:Math.random()<.5})}}
 
-function spin(){if(spinning)return;const items=parseItems();if(items.length<2)return;spinning=true;let speed=0.35+Math.random()*0.25;const tick=document.getElementById('tick');const drum=document.getElementById('drum');const celebrate=document.getElementById('celebrate');let prevIdx=-1;const it=setInterval(()=>{angle+=speed;speed*=0.985;draw(items);
+const drum=document.getElementById('drum');
+const celebrate=document.getElementById('celebrate');
+const volSlider=document.getElementById('volumeSlider');
+volSlider.addEventListener('input',()=>{volume=parseFloat(volSlider.value)})
+
+function spin(){if(spinning)return;const items=parseItems();if(items.length<2)return;spinning=true;let speed=0.35+Math.random()*0.25;let prevIdx=-1;const it=setInterval(()=>{angle+=speed;speed*=0.985;draw(items);
   const pa=(0.5*Math.PI-angle%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
   const idx=Math.floor(pa/(2*Math.PI/items.length))%items.length;
-  if(soundOn && idx!==prevIdx){drum.currentTime=0;drum.play();prevIdx=idx}
+  if(idx!==prevIdx){drum.currentTime=0;drum.volume=volume;drum.play();prevIdx=idx}
   if(speed<0.002){clearInterval(it);spinning=false;
   const hit=items[idx],col=colors[idx%colors.length];
   document.getElementById('result').textContent=hit;
@@ -86,27 +96,19 @@ function spin(){if(spinning)return;const items=parseItems();if(items.length<2)re
   document.body.style.setProperty('--bg1',col);
   document.body.style.setProperty('--bg2','#fff');
   explodeEffect(col);
-  if(soundOn){celebrate.currentTime=0;celebrate.play()}
+  celebrate.currentTime=0;celebrate.volume=volume;celebrate.play();
   history.unshift({hit,col});history=history.slice(0,10);
   renderHistory();
 }},16)}
-
 function renderHistory(){const h=document.getElementById('historyList');h.innerHTML='';history.forEach(i=>{const d=document.createElement('div');d.className='history-item';d.innerHTML=`<span class="color-chip" style="background:${i.col}"></span>${i.hit}`;h.appendChild(d)})}
-
-function resetAll(){document.getElementById('result').textContent='';history=[];renderHistory();document.body.style.setProperty('--bg1','#fff')}
 function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
-
-// タブ
+function generateURL(){const data=encodeURIComponent(document.getElementById('items').value);const url=location.origin+location.pathname+'?d='+data;document.getElementById('shareURL').value=url}
+function copyURL(){const input=document.getElementById('shareURL');input.select();navigator.clipboard.writeText(input.value)}
 function renderTabs(){const t=document.getElementById('tabs');t.innerHTML='';for(let i=0;i<5;i++){const d=document.createElement('div');d.className='tab'+(i===activeTab?' active':'');const name=presets[i]?.name||('Tab '+(i+1));const span=document.createElement('span');span.textContent=name;span.onclick=()=>switchTab(i);const edit=document.createElement('button');edit.textContent='✏';edit.onclick=(e)=>{e.stopPropagation();const n=prompt('タブ名',name);if(n){presets[i]=presets[i]||{};presets[i].name=n;localStorage.setItem('presets',JSON.stringify(presets));renderTabs()}};d.appendChild(span);d.appendChild(edit);t.appendChild(d)}}
 function switchTab(i){presets[activeTab]={raw:document.getElementById('items').value};activeTab=i;document.getElementById('items').value=presets[i]?.raw||'';localStorage.setItem('presets',JSON.stringify(presets));renderTabs()}
 
-// URL & QR
-function generateURL(){const data=encodeURIComponent(document.getElementById('items').value);const url=location.origin+location.pathname+'?d='+data;document.getElementById('shareURL').value=url;drawQR(url)}
-function copyURL(){const input=document.getElementById('shareURL');input.select();navigator.clipboard.writeText(input.value)}
-function drawQR(text){const c=document.getElementById('qr'),q=c.getContext('2d');c.width=100;c.height=100;q.clearRect(0,0,100,100);const bits=Array.from(text).map(ch=>ch.charCodeAt(0)%2);let i=0;for(let y=0;y<10;y++)for(let x=0;x<10;x++){q.fillStyle=bits[i++%bits.length]?'#000':'#fff';q.fillRect(x*10,y*10,10,10)}}
-
-// 初期
 const params=new URLSearchParams(location.search);if(params.get('d'))document.getElementById('items').value=decodeURIComponent(params.get('d'));renderTabs();draw(parseItems());
+canvas.addEventListener('click',spin);
 </script>
 </body>
 </html>
