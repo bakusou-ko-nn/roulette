@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ルーレット</title>
+  <style>
+    body {
+      font-family: "Arial Rounded MT Bold", "Hiragino Maru Gothic ProN", sans-serif;
+      background: white;
+      text-align: center;
+    }
+    textarea {
+      width: 80%;
+      height: 120px;
+      font-size: 16px;
+      border-radius: 12px;
+      padding: 10px;
+    }
+    button {
+      margin-top: 10px;
+      font-size: 20px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: none;
+      background: #ffb3c1;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 28px;
+      color: #ff5c8a;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🎯 ルーレット</h1>
+
+<p>改行で項目を増やせる</p>
+<textarea id="items">りんご
+みかん
+ばなな</textarea><br>
+
+<button onclick="spin()">まわす</button>
+
+<div id="result"></div>
+
+<script>
+function spin() {
+  const items = document.getElementById("items").value.split("\n").filter(v => v);
+  const hit = items[Math.floor(Math.random() * items.length)];
+  document.getElementById("result").textContent = "✨ " + hit + " ✨";
+}
+</script>
+
+</body>
+</html>
