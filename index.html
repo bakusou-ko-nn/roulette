@@ -1,111 +1,201 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Roulette</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ルーレット</title>
 <style>
-:root{--bg1:#fff;--bg2:#fff}
-body{margin:0;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:linear-gradient(to bottom,var(--bg1),var(--bg2));overflow:hidden;}
-#geom{position:fixed;inset:0;pointer-events:none;z-index:0}
-#layout{position:relative;z-index:1;width:90%;max-width:900px;display:flex;gap:12px;justify-content:center;transform:scale(0.9);}
-#left{width:25%;display:flex;flex-direction:column;justify-content:flex-start;padding-right:12px;align-items:flex-start}
-#volumeWrapper{display:flex;align-items:center;margin-bottom:12px}
-#volumeSlider{width:120px}
-.tabs{display:flex;flex-direction:column;gap:12px}
-.tab{padding:14px 18px;border-radius:0;border:2px solid green;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:18px}
-.tab.active{background:#7FD4C9;border-radius:12px;color:#000}
-.tab span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tab button{border:none;background:none;cursor:pointer;font-size:14px}
-#center{width:50%;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
-textarea{width:100%;max-width:420px;height:120px;border-radius:12px;padding:10px;font-size:14px}
-#wheelWrap{position:relative}
-canvas#wheel{width:380px;height:380px;cursor:pointer;background:#fff}
-#startText{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;color:rgba(0,0,0,0.15);pointer-events:none;font-family:'Montserrat',sans-serif;font-weight:900}
-#arrow{font-size:28px;margin-top:-4px}
-#result{font-family:'Montserrat',sans-serif;font-size:52px;font-weight:900;margin-top:10px;text-decoration:underline}
-#right{width:25%;padding-left:12px;display:flex;flex-direction:column;justify-content:flex-start}
-#history{background:#fff;border-radius:0;padding:14px;font-size:24px;flex-grow:1;display:flex;flex-direction:column;overflow-y:auto}
-.history-item{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.color-chip{width:18px;height:18px;border-radius:50%}
-#leftButtons{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-#shareWrapper{display:flex;align-items:center;gap:8px;margin-top:8px}
-#shareURL{flex:1;border:none;background:#eee;padding:6px;border-radius:8px;font-size:14px}
-button{padding:12px 18px;border:none;border-radius:999px;background:#333;color:#fff;cursor:pointer;font-size:16px}
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+  }
+  .app {
+    width: 95vw;
+    max-width: 1200px;
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 16px;
+    padding: 24px 24px 80px;
+  }
+
+  /* 左：タブ */
+  .tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .tab {
+    padding: 10px;
+    border: 2px solid #7fd6c2;
+    cursor: pointer;
+  }
+  .tab.active {
+    background: #cceee6;
+    border-radius: 12px;
+  }
+
+  /* 音量 */
+  .volume {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .volume input[type=range] {
+    writing-mode: bt-lr;
+    -webkit-appearance: slider-vertical;
+    height: 120px;
+  }
+
+  /* 中央：ルーレット */
+  .center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  canvas {
+    width: 320px;
+    height: 320px;
+    touch-action: manipulation;
+  }
+  .hit {
+    font-size: 32px;
+    font-weight: bold;
+    margin-top: 8px;
+    text-decoration: underline;
+  }
+
+  /* 右：履歴 */
+  .history {
+    border: 2px solid red;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .history-item {
+    font-size: 20px;
+  }
+
+  /* 下部 */
+  .bottom {
+    position: fixed;
+    bottom: 16px;
+    left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
 </style>
 </head>
 <body>
-<canvas id="geom"></canvas>
-<div id="layout">
-  <div id="left">
-    <div id="volumeWrapper">
-      <button onclick="toggleSound()" id="soundBtn">🔊</button>
-      <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1">
-    </div>
-    <div class="tabs" id="tabs"></div>
-    <div id="leftButtons">
-      <button onclick="generateURL()">URL生成</button>
-      <div id="shareWrapper"><input type="text" id="shareURL" readonly><button onclick="copyURL()">コピー</button></div>
+<div class="app">
+  <div class="tabs">
+    <div class="tab active">タブ1</div>
+    <div class="tab">タブ2</div>
+
+    <div class="volume">
+      <span>音量</span>
+      <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" />
     </div>
   </div>
-  <div id="center">
-    <textarea id="items" placeholder="1行につき1単語"></textarea>
-    <div id="wheelWrap">
-      <canvas id="wheel" width="380" height="380"></canvas>
-      <div id="startText">抽選開始</div>
-    </div>
-    <div id="arrow">▲</div>
-    <div id="result"></div>
+
+  <div class="center">
+    <canvas id="wheel" width="320" height="320"></canvas>
+    <div class="hit" id="hitText">—</div>
   </div>
-  <div id="right">
-    <div id="history"><strong>履歴</strong><div id="historyList"></div></div>
-  </div>
+
+  <div class="history" id="history"></div>
 </div>
-<audio id="drum" src="https://www.soundeffect-lab.info/sound/se/explosion_timpani_roll.mp3"></audio>
-<audio id="celebrate1" src="https://www.soundeffect-lab.info/sound/se/explosion1.mp3"></audio>
-<audio id="celebrate2" src="https://www.soundeffect-lab.info/sound/se/dondonpafufu.mp3"></audio>
+
+<div class="bottom">
+  <button id="urlBtn">URL生成</button>
+  <div id="urlArea"></div>
+</div>
+
 <script>
-const gcv=document.getElementById('geom'),gctx=gcv.getContext('2d');let geoms=[];function resize(){gcv.width=innerWidth;gcv.height=innerHeight}addEventListener('resize',resize);resize();function spawn(){if(Math.random()<0.08)geoms.push({x:Math.random()*gcv.width,y:-20,s:6+Math.random()*6,spd:0.4+Math.random(),c:`hsl(${Math.random()*360},60%,85%)`,t:Math.random()<.5})}function drawBg(){gctx.clearRect(0,0,gcv.width,gcv.height);spawn();geoms.forEach(o=>{gctx.fillStyle=o.c;if(o.t){gctx.beginPath();gctx.arc(o.x,o.y,o.s,0,Math.PI*2);gctx.fill()}else gctx.fillRect(o.x,o.y,o.s,o.s);o.y+=o.spd});geoms=geoms.filter(o=>o.y<gcv.height+20);requestAnimationFrame(drawBg)}drawBg();
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const items = ['A','B','C','D'];
+let angle = 0;
+let spinning = false;
+let volume = 0.7;
 
-const canvas=document.getElementById('wheel'),ctx=canvas.getContext('2d');
-const colors=["#ffadad","#ffd6a5","#fdffb6","#caffbf","#9bf6ff","#a0c4ff","#bdb2ff"];
-let angle=0,spinning=false,soundOn=true,volume=1;
-let history=[],activeTab=0;
-const presets=JSON.parse(localStorage.getItem('presets')||'[]');
-function parseItems(){return document.getElementById('items').value.split('\n').filter(Boolean)}
-function draw(items){const r=canvas.width/2;ctx.clearRect(0,0,canvas.width,canvas.height);const step=2*Math.PI/items.length;items.forEach((t,i)=>{ctx.beginPath();ctx.moveTo(r,r);ctx.fillStyle=colors[i%colors.length];ctx.arc(r,r,r,i*step+angle,(i+1)*step+angle);ctx.fill();ctx.save();ctx.translate(r,r);ctx.rotate(i*step+step/2+angle);ctx.textAlign='right';ctx.fillStyle='#333';ctx.font='14px sans-serif';ctx.fillText(t,r-10,5);ctx.restore()})}
-function explodeEffect(col){for(let i=0;i<20;i++){geoms.push({x:canvas.width/2,y:canvas.height/2,s:4+Math.random()*6,spd:1+Math.random()*2,c:col,t:Math.random()<.5})}}
+const timpani = new Audio('https://soundeffect-lab.info/sound/battle/mp3/timpani-roll.mp3');
+const boom = new Audio('https://soundeffect-lab.info/sound/battle/mp3/explosion1.mp3');
+const fanfare = new Audio('https://soundeffect-lab.info/sound/various/mp3/dondonpafupafu.mp3');
 
-const drum=document.getElementById('drum');
-const celebrate1=document.getElementById('celebrate1');
-const celebrate2=document.getElementById('celebrate2');
-const volSlider=document.getElementById('volumeSlider');
-volSlider.addEventListener('input',()=>{volume=parseFloat(volSlider.value)})
+timpani.loop = true;
 
-function spin(){if(spinning)return;const items=parseItems();if(items.length<2)return;spinning=true;let speed=0.35+Math.random()*0.25;let prevIdx=-1;drum.loop=true;drum.currentTime=0;drum.volume=volume;if(soundOn)drum.play();const it=setInterval(()=>{angle+=speed;speed*=0.985;draw(items);
-  const pa=(1.5*Math.PI-angle%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
-  const idx=Math.floor(pa/(2*Math.PI/items.length))%items.length;
-  if(idx!==prevIdx){prevIdx=idx}
-  if(speed<0.002){clearInterval(it);spinning=false;drum.pause();drum.currentTime=0;
-  const hit=items[idx],col=colors[idx%colors.length];
-  document.getElementById('result').textContent=hit;
-  document.getElementById('result').style.fontSize='52px';
-  document.body.style.setProperty('--bg1',col);
-  document.body.style.setProperty('--bg2','#fff');
-  explodeEffect(col);
-  if(soundOn){celebrate1.currentTime=0;celebrate2.currentTime=0;celebrate1.volume=volume;celebrate2.volume=volume;celebrate1.play();celebrate2.play();}
-  history.unshift({hit,col});history=history.slice(0,10);renderHistory();
-}},16)}
-function renderHistory(){const h=document.getElementById('historyList');h.innerHTML='';history.forEach(i=>{const d=document.createElement('div');d.className='history-item';d.innerHTML=`<span class="color-chip" style="background:${i.col}"></span>${i.hit}`;h.appendChild(d)})}
-function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
-function generateURL(){const data=encodeURIComponent(document.getElementById('items').value);const url=location.origin+location.pathname+'?d='+data;document.getElementById('shareURL').value=url}
-function copyURL(){const input=document.getElementById('shareURL');input.select();navigator.clipboard.writeText(input.value)}
-function renderTabs(){const t=document.getElementById('tabs');t.innerHTML='';for(let i=0;i<5;i++){const d=document.createElement('div');d.className='tab'+(i===activeTab?' active':'');const name=presets[i]?.name||('Tab '+(i+1));const span=document.createElement('span');span.textContent=name;span.onclick=()=>switchTab(i);const edit=document.createElement('button');edit.textContent='✏';edit.onclick=(e)=>{e.stopPropagation();const n=prompt('タブ名',name);if(n){presets[i]=presets[i]||{};presets[i].name=n;localStorage.setItem('presets',JSON.stringify(presets));renderTabs()}};d.appendChild(span);d.appendChild(edit);t.appendChild(d)}}
-function switchTab(i){presets[activeTab]={raw:document.getElementById('items').value};activeTab=i;document.getElementById('items').value=presets[i]?.raw||'';localStorage.setItem('presets',JSON.stringify(presets));renderTabs()}
+document.getElementById('volume').addEventListener('input', e => {
+  volume = e.target.value;
+  timpani.volume = boom.volume = fanfare.volume = volume;
+});
 
-const params=new URLSearchParams(location.search);if(params.get('d'))document.getElementById('items').value=decodeURIComponent(params.get('d'));renderTabs();draw(parseItems());
-canvas.addEventListener('click',spin);
+function draw() {
+  ctx.clearRect(0,0,320,320);
+  const r = 160;
+  const step = (Math.PI*2)/items.length;
+
+  items.forEach((t,i)=>{
+    ctx.beginPath();
+    ctx.moveTo(r,r);
+    ctx.fillStyle = '#fff';
+    ctx.arc(r,r,r,i*step+angle,(i+1)*step+angle);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(r,r);
+    ctx.rotate(i*step+step/2+angle);
+    ctx.fillStyle = '#000';
+    ctx.fillText(t,80,5);
+    ctx.restore();
+  });
+
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.font = '24px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('抽選開始',160,170);
+}
+
+function spin() {
+  if (spinning) return;
+  spinning = true;
+  timpani.currentTime = 0;
+  timpani.play();
+  let speed = Math.random()*0.3 + 0.25;
+
+  const timer = setInterval(()=>{
+    angle += speed;
+    speed *= 0.98;
+    draw();
+    if (speed < 0.002) {
+      clearInterval(timer);
+      timpani.pause();
+      boom.play();
+      fanfare.play();
+      spinning = false;
+      const index = Math.floor(((Math.PI*2 - angle + Math.PI/2)%(Math.PI*2))/((Math.PI*2)/items.length));
+      const hit = items[index];
+      document.getElementById('hitText').textContent = hit;
+      const h = document.getElementById('history');
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.textContent = hit;
+      h.prepend(div);
+      while (h.children.length>10) h.removeChild(h.lastChild);
+    }
+  },16);
+}
+
+canvas.addEventListener('click', spin);
+
+draw();
 </script>
 </body>
 </html>
