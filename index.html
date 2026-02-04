@@ -8,132 +8,141 @@
   :root {
     --vivid-red: #FF6B6B;
     --vivid-blue: #4ECDC4;
-    --pastel-bg: #fdfdfd;
+    --pastel-bg: #ffffff;
   }
 
   body {
     margin: 0; padding: 0;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Helvetica Neue', Arial, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
     background-color: var(--pastel-bg);
     display: flex; justify-content: center; align-items: center;
     height: 100vh; overflow: hidden;
   }
 
-  /* 背景：軽い幾何学模様 */
-  #bg-canvas {
+  /* 背景の装飾 */
+  #bg-layer {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: -1; opacity: 0.2; pointer-events: none;
+    z-index: -1; opacity: 0.15; pointer-events: none;
   }
 
-  #app-container {
+  #main-layout {
     display: flex; width: 98vw; height: 95vh; gap: 20px;
   }
 
-  /* --- 左：タブ・設定 --- */
+  /* --- 左側：設定・タブ --- */
   #panel-left {
     width: 20%; display: flex; flex-direction: column; gap: 15px;
   }
-  .vol-setting {
-    display: flex; flex-direction: column; align-items: center;
-    background: #fff; padding: 15px; border-radius: 15px; border: 1px solid #ddd;
+  .config-box {
+    background: #fcfcfc; border: 1px solid #eee; border-radius: 15px;
+    padding: 15px; display: flex; flex-direction: column; align-items: center;
   }
   input[type="range"] {
     writing-mode: bt-lr; -webkit-appearance: slider-vertical;
-    height: 150px; accent-color: var(--vivid-blue);
+    height: 160px; accent-color: var(--vivid-blue);
   }
-  .tab-list { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-  .tab-btn {
-    padding: 12px; border: 2px solid #eee; border-radius: 10px;
-    background: white; cursor: pointer; font-weight: bold; text-align: center;
+  .tabs { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+  .tab-item {
+    padding: 12px; border: 2px solid #ddd; border-radius: 10px;
+    background: #fff; cursor: pointer; font-weight: bold; text-align: center;
   }
-  .tab-btn.active { background: #E0F2F1; border-color: var(--vivid-blue); border-radius: 20px; }
+  .tab-item.active { background: #E0F2F1; border-color: var(--vivid-blue); border-radius: 25px; }
 
-  /* --- 中央：メイン（ここが指示通りの並び順） --- */
+  /* --- 中央：メイン（ここが指示通りの構造） --- */
   #panel-center {
     flex: 1; display: flex; flex-direction: column; align-items: center;
   }
 
   /* 題名 */
-  h1 { font-size: 24px; color: #555; margin: 10px 0; }
+  h1 { font-size: 28px; color: #444; margin: 10px 0 5px 0; }
 
-  /* 1. 記入スペース */
-  #input-box {
-    width: 90%; height: 90px; margin-bottom: 10px;
-    border-radius: 12px; border: 2px solid #ddd; padding: 12px;
+  /* 1. 記入スペース（最上部） */
+  #input-field {
+    width: 90%; height: 100px; margin-bottom: 10px;
+    border: 2px solid #ddd; border-radius: 15px; padding: 15px;
     font-size: 18px; resize: none; outline: none; box-sizing: border-box;
   }
 
-  /* 2. 結果内容 */
-  #result-text {
-    font-size: 52px; font-weight: 900; color: #333;
-    min-height: 70px; margin-bottom: 5px; text-align: center;
-    text-decoration: underline 8px var(--vivid-red); text-underline-offset: 12px;
+  /* 2. 結果内容（入力欄の下） */
+  #result-display {
+    font-size: 55px; font-weight: 900; color: #222;
+    min-height: 80px; margin-bottom: 5px; text-align: center;
+    text-decoration: underline 8px var(--vivid-red); text-underline-offset: 14px;
   }
 
-  /* 3 & 4. ▼（判定）とその下に 円盤 */
-  #wheel-wrapper {
-    position: relative; cursor: pointer;
+  /* 3 & 4. ▼判定 と 円盤（判定を上に重ねる） */
+  #roulette-container {
+    position: relative;
+    cursor: pointer;
     display: flex; flex-direction: column; align-items: center;
+    /* 全体を少し下げて空間を作る */
+    margin-top: 10px;
   }
 
-  /* 判定の▼：円盤の上に絶対配置で被せる */
-  #indicator {
+  /* 判定の▼：円盤の上に絶対配置 */
+  #indicator-v {
     position: absolute;
-    top: -5px; /* ここで円盤に被せています */
+    top: -10px; /* 円盤のフチより内側に突き刺す */
     width: 0; height: 0;
     border-left: 25px solid transparent;
     border-right: 25px solid transparent;
-    border-top: 45px solid var(--vivid-red); /* 下向きの▼ */
-    z-index: 10;
+    border-top: 50px solid var(--vivid-red); /* 存在感のある大きさ */
+    z-index: 100;
     filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
   }
 
-  canvas#wheel {
+  canvas#roulette-wheel {
     border-radius: 50%;
-    margin-top: 0; /* ▼と位置を合わせる */
+    /* margin-topは0に固定 */
   }
 
-  /* --- 右：履歴 --- */
+  /* --- 右側：履歴 --- */
   #panel-right { width: 20%; display: flex; flex-direction: column; }
   #history-frame {
-    flex: 1; border: 4px solid var(--vivid-red); border-radius: 25px;
-    background: white; padding: 15px; overflow-y: auto;
+    flex: 1; border: 5px solid var(--vivid-red); border-radius: 30px;
+    background: #fff; padding: 20px; overflow-y: auto;
   }
-  #history-list { list-style: none; padding: 0; font-size: 22px; font-weight: bold; }
-  #history-list li { padding: 8px 0; border-bottom: 1px dashed #ffdada; }
+  #history-list { list-style: none; padding: 0; font-size: 24px; font-weight: bold; }
+  #history-list li { padding: 10px 0; border-bottom: 1px dashed #ffdada; }
 
+  /* その他演出 */
+  #fx-layer {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 50;
+  }
 </style>
 </head>
 <body>
 
-<canvas id="bg-canvas"></canvas>
+<canvas id="bg-layer"></canvas>
 
-<div id="app-container">
+<div id="main-layout">
   <div id="panel-left">
-    <div class="vol-setting">
-      <span>大</span>
-      <input type="range" id="vol" min="0" max="1" step="0.1" value="0.5">
-      <span>小</span>
-      <label style="margin-top:5px; font-size:12px;"><input type="checkbox" id="snd-on" checked> 音ON</label>
+    <div class="config-box">
+      <span style="font-weight:bold;">大</span>
+      <input type="range" id="vol-slider" min="0" max="1" step="0.1" value="0.5">
+      <span style="font-weight:bold;">小</span>
+      <label style="margin-top:8px; font-size:12px;"><input type="checkbox" id="snd-toggle" checked> 音声有効</label>
     </div>
-    <div id="tabs" class="tab-list"></div>
-    <button onclick="shareURL()" style="padding:10px; background:var(--vivid-blue); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">URL発行</button>
+    <div id="tabs-area" class="tabs"></div>
+    <button onclick="copyShareURL()" style="padding:12px; background:var(--vivid-blue); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">URLを発行する</button>
   </div>
 
   <div id="panel-center">
     <h1>ルレット</h1>
-    <textarea id="input-box" placeholder="項目を改行で入力..."></textarea>
-    <div id="result-text"></div>
+    <textarea id="input-field" placeholder="項目を改行で入力してください"></textarea>
+    <div id="result-display"></div>
     
-    <div id="wheel-wrapper" onclick="startSpin()">
-      <div id="indicator"></div>
-      <canvas id="wheel" width="520" height="520"></canvas>
+    <div id="roulette-container" onclick="startRolling()">
+      <div id="indicator-v"></div>
+      <canvas id="roulette-wheel" width="540" height="540"></canvas>
     </div>
+    <canvas id="fx-layer"></canvas>
   </div>
 
   <div id="panel-right">
     <div id="history-frame">
-      <div style="text-align:center; color:var(--vivid-red); font-weight:bold; margin-bottom:10px;">履歴</div>
+      <div style="text-align:center; color:var(--vivid-red); font-weight:900; margin-bottom:15px; font-size:18px;">履歴</div>
       <ul id="history-list"></ul>
     </div>
   </div>
@@ -141,41 +150,49 @@
 
 <script>
   let state = {
-    tabs: [{ name: "ルレット1", items: ["あたり", "はずれ", "もういっかい"] }],
-    activeIdx: 0,
+    tabs: [{ name: "ルレット1", items: ["A", "B", "C"] }],
+    currentIdx: 0,
     angle: 0,
     isSpinning: false,
     history: []
   };
 
-  const colors = ["#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF", "#E2F0CB", "#FFDAC1", "#E0BBE4"];
-  const canvas = document.getElementById('wheel');
+  const palette = ["#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF", "#E2F0CB", "#FFDAC1", "#E0BBE4"];
+  const canvas = document.getElementById('roulette-wheel');
   const ctx = canvas.getContext('2d');
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const audio = new (window.AudioContext || window.webkitAudioContext)();
 
   function init() {
+    // 初期化
+    const params = new URLSearchParams(window.location.search);
+    if(params.has('d')) {
+      try { state.tabs = JSON.parse(decodeURIComponent(atob(params.get('d')))); } catch(e){}
+    }
     renderTabs();
-    loadActive();
-    drawBG();
+    updateView();
+    drawBackground();
   }
 
   function renderTabs() {
-    const box = document.getElementById('tabs');
+    const box = document.getElementById('tabs-area');
     box.innerHTML = state.tabs.map((t, i) => `
-      <div class="tab-btn ${i === state.activeIdx ? 'active' : ''}" onclick="state.activeIdx=${i};renderTabs();loadActive();">${t.name}</div>
-    `).join('');
+      <div class="tab-item ${i === state.currentIdx ? 'active' : ''}" onclick="switchTab(${i})">${t.name}</div>
+    `).join('') + (state.tabs.length < 5 ? `<div class="tab-item" style="color:#aaa" onclick="addTab()">+ 追加</div>` : '');
   }
 
-  function loadActive() {
-    document.getElementById('input-box').value = state.tabs[state.activeIdx].items.join('\n');
+  function updateView() {
+    document.getElementById('input-field').value = state.tabs[state.currentIdx].items.join('\n');
     drawWheel();
   }
 
   function drawWheel(hitIdx = -1) {
-    const items = state.tabs[state.activeIdx].items;
-    if(!items.length) return;
-    const cx = 260, cy = 260, r = 250;
-    ctx.clearRect(0, 0, 520, 520);
+    const items = state.tabs[state.currentIdx].items;
+    if(!items.length) {
+      ctx.clearRect(0,0,540,540);
+      return;
+    }
+    const cx = 270, cy = 270, r = 260;
+    ctx.clearRect(0, 0, 540, 540);
     const step = (Math.PI * 2) / items.length;
 
     items.forEach((txt, i) => {
@@ -184,7 +201,7 @@
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.arc(cx, cy, r, s, e);
-      ctx.fillStyle = (i === hitIdx) ? "#FF007E" : colors[i % colors.length];
+      ctx.fillStyle = (i === hitIdx) ? "#FF007E" : palette[i % palette.length];
       ctx.fill();
       ctx.strokeStyle = "#fff";
       ctx.lineWidth = 4;
@@ -194,87 +211,111 @@
       ctx.translate(cx, cy);
       ctx.rotate(s + step / 2);
       ctx.fillStyle = "#333";
-      ctx.font = "bold 20px sans-serif";
+      ctx.font = "bold 22px sans-serif";
       ctx.textAlign = "right";
       ctx.fillText(txt.slice(0, 10), r - 40, 8);
       ctx.restore();
     });
 
-    // センター
-    ctx.beginPath(); ctx.arc(cx, cy, 25, 0, Math.PI * 2); ctx.fillStyle = "white"; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI * 2); ctx.fillStyle = "white"; ctx.fill();
   }
 
-  function startSpin() {
-    if(state.isSpinning || state.tabs[state.activeIdx].items.length < 2) return;
+  function startRolling() {
+    if(state.isSpinning || state.tabs[state.currentIdx].items.length < 2) return;
     state.isSpinning = true;
-    document.getElementById('result-text').textContent = "";
+    document.getElementById('result-display').textContent = "";
     
-    let speed = Math.random() * 0.4 + 0.5;
-    const loop = () => {
+    let speed = Math.random() * 0.45 + 0.45;
+    const animate = () => {
       state.angle += speed;
       speed *= 0.988;
-      playBeep('roll');
-      if(speed < 0.003) {
+      playSE('tick');
+      if(speed < 0.0035) {
         state.isSpinning = false;
-        finalize();
+        finishSpin();
         return;
       }
       drawWheel();
-      requestAnimationFrame(loop);
+      requestAnimationFrame(animate);
     };
-    loop();
+    animate();
   }
 
-  function finalize() {
-    const items = state.tabs[state.activeIdx].items;
+  function finishSpin() {
+    const items = state.tabs[state.currentIdx].items;
     const step = (Math.PI * 2) / items.length;
-    // 真上(270度 = 1.5 * PI)を判定点にする
+    // 真上（270度 = 1.5 * PI）の位置にある項目を計算
     const pointer = (Math.PI * 1.5 - state.angle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
     const hit = Math.floor(pointer / step);
     
     drawWheel(hit);
-    const win = items[hit];
-    document.getElementById('result-text').textContent = win;
-    playBeep('win');
-    state.history.unshift(win);
+    const winner = items[hit];
+    document.getElementById('result-display').textContent = winner;
+    playSE('win');
+    updateHistory(winner);
+    triggerFX();
+  }
+
+  function updateHistory(txt) {
+    state.history.unshift(txt);
     document.getElementById('history-list').innerHTML = state.history.slice(0, 15).map(h => `<li>${h}</li>`).join('');
   }
 
-  function playBeep(type) {
-    if(!document.getElementById('snd-on').checked) return;
-    const vol = document.getElementById('vol').value;
-    const g = audioCtx.createGain(); g.connect(audioCtx.destination);
-    g.gain.setValueAtTime(vol * 0.15, audioCtx.currentTime);
+  function playSE(type) {
+    if(!document.getElementById('snd-toggle').checked) return;
+    const vol = document.getElementById('vol-slider').value;
+    const g = audio.createGain(); g.connect(audio.destination);
+    g.gain.setValueAtTime(vol * 0.15, audio.currentTime);
 
-    if(type === 'roll') {
-      const o = audioCtx.createOscillator(); o.type = 'sawtooth';
-      o.frequency.value = 80; o.connect(g);
-      o.start(); o.stop(audioCtx.currentTime + 0.05);
+    if(type === 'tick') {
+      const o = audio.createOscillator(); o.type = 'sawtooth';
+      o.frequency.value = 85; o.connect(g);
+      o.start(); o.stop(audio.currentTime + 0.05);
     } else {
-      [523, 659, 783].forEach((f, i) => {
-        const o = audioCtx.createOscillator(); o.connect(g);
-        o.frequency.value = f; o.start(audioCtx.currentTime + i * 0.1);
-        o.stop(audioCtx.currentTime + 0.5);
+      [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+        const o = audio.createOscillator(); o.connect(g);
+        o.frequency.value = f; o.start(audio.currentTime + i * 0.1);
+        o.stop(audio.currentTime + 0.6);
       });
     }
   }
 
-  document.getElementById('input-box').oninput = (e) => {
-    state.tabs[state.activeIdx].items = e.target.value.split('\n').filter(v => v.trim());
+  function switchTab(i) { state.currentIdx = i; renderTabs(); updateView(); }
+  function addTab() {
+    const name = prompt("タブの名前を入力してね", "ルレット" + (state.tabs.length+1));
+    if(name) { state.tabs.push({name, items:[]}); state.currentIdx = state.tabs.length-1; renderTabs(); updateView(); }
+  }
+
+  document.getElementById('input-field').oninput = (e) => {
+    state.tabs[state.currentIdx].items = e.target.value.split('\n').filter(v => v.trim());
     drawWheel();
   };
 
-  function shareURL() {
-    const d = btoa(encodeURIComponent(JSON.stringify(state.tabs)));
-    prompt("このURLを保存してね：", window.location.origin + window.location.pathname + "?d=" + d);
+  function copyShareURL() {
+    const data = btoa(encodeURIComponent(JSON.stringify(state.tabs)));
+    const url = window.location.origin + window.location.pathname + "?d=" + data;
+    navigator.clipboard.writeText(url);
+    alert("共有URLをコピーしたよ！");
   }
 
-  function drawBG() {
-    const c = document.getElementById('bg-canvas'); const b = c.getContext('2d');
+  function triggerFX() {
+    const fx = document.getElementById('fx-layer'); const fctx = fx.getContext('2d');
+    fx.width = fx.parentElement.clientWidth; fx.height = fx.parentElement.clientHeight;
+    let particles = [];
+    for(let i=0; i<40; i++) particles.push({x:fx.width/2, y:200, vx:(Math.random()-0.5)*20, vy:(Math.random()-0.5)*20, c:palette[i%8], l:1.0});
+    const loop = () => {
+      fctx.clearRect(0,0,fx.width,fx.height); let active = false;
+      particles.forEach(p => { if(p.l > 0){ active=true; p.x+=p.vx; p.y+=p.vy; p.vy+=0.4; p.l-=0.02; fctx.globalAlpha=p.l; fctx.fillStyle=p.c; fctx.fillRect(p.x,p.y,12,12); }});
+      if(active) requestAnimationFrame(loop);
+    }; loop();
+  }
+
+  function drawBackground() {
+    const c = document.getElementById('bg-layer'); const bctx = c.getContext('2d');
     c.width = window.innerWidth; c.height = window.innerHeight;
-    for(let i=0; i<40; i++) {
-      b.fillStyle = colors[i%8]; b.globalAlpha = 0.15;
-      b.fillRect(Math.random()*c.width, Math.random()*c.height, 30, 30);
+    for(let i=0; i<35; i++) {
+      bctx.fillStyle = palette[i%8]; bctx.globalAlpha = 0.1;
+      bctx.fillRect(Math.random()*c.width, Math.random()*c.height, 40, 40);
     }
   }
 
