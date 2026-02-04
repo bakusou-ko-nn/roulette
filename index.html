@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ルレット</title>
 
 <style>
@@ -13,13 +13,12 @@
   --pastel4:#fff0c9;
   --pastel5:#e7d8c9;
   --hit:#ff9aa2;
-  --border:#ffffff;
 }
 *{box-sizing:border-box;}
 body{
   margin:0;
   background:#fff;
-  font-family:"Rounded Mplus 1c", system-ui, -apple-system, sans-serif;
+  font-family:system-ui, sans-serif;
   overflow:hidden;
 }
 .app{
@@ -27,52 +26,9 @@ body{
   margin:0 auto;
   padding:24px 24px 96px;
   display:grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns:1fr 2fr 1fr;
   gap:24px;
 }
-
-/* 左：タブ＆入力 */
-.left{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-.tabs{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.tab{
-  border:2px solid #9be3c7;
-  padding:14px;
-  cursor:pointer;
-  background:#fff;
-}
-.tab.active{
-  background:#cceee6;
-  border-radius:14px;
-}
-.input{
-  width:100%;
-  min-height:160px;
-  padding:12px;
-  border:2px dashed #9be3c7;
-  font-size:16px;
-}
-.input::placeholder{color:#888;}
-.volume{
-  margin-top:8px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-.volume input{
-  writing-mode:bt-lr;
-  -webkit-appearance:slider-vertical;
-  height:140px;
-}
-
-/* 中央 */
 .center{
   display:flex;
   flex-direction:column;
@@ -94,92 +50,34 @@ canvas{
   margin-top:14px;
   text-decoration:underline;
 }
-
-/* 右：履歴 */
 .history{
   border:2px solid red;
   border-radius:14px;
   padding:16px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
   max-height:420px;
   overflow:auto;
 }
-.history div{font-size:22px;}
-
-/* 下 */
-.bottom{
-  position:fixed;
-  left:24px;
-  bottom:24px;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-
-/* ===== 演出用 ===== */
 .shake{animation:shake .3s infinite;}
 @keyframes shake{
-  0%{transform:translate(0,0)}
+  0%{transform:translate(0)}
   25%{transform:translate(2px,1px)}
   50%{transform:translate(-2px,-1px)}
   75%{transform:translate(1px,-2px)}
-  100%{transform:translate(0,0)}
 }
 .invert{filter:invert(1);}
-.glitch{filter:contrast(1.4) saturate(1.4);}
-.pixel{image-rendering:pixelated; filter:blur(1px);}
-.fade{opacity:.2;}
-.vignette::after{
-  content:""; position:fixed; inset:0;
-  box-shadow: inset 0 0 120px rgba(0,0,0,.6);
-  pointer-events:none;
-}
+.pixel{filter:blur(1px);}
 .flash{
-  position:fixed; inset:0; background:#fff; opacity:1;
+  position:fixed; inset:0;
+  background:#fff;
   animation:flash .15s forwards;
 }
 @keyframes flash{to{opacity:0}}
-.split{
-  position:absolute; pointer-events:none; opacity:.6;
-}
-
-/* 幾何学（背景） */
-.bg{
-  position:fixed; inset:0; pointer-events:none; z-index:-1;
-}
-.bg span{
-  position:absolute; width:10px; height:20px;
-  background:rgba(0,0,0,.05);
-  animation:fall 8s linear infinite;
-}
-@keyframes fall{
-  from{transform:translateY(-20px)}
-  to{transform:translateY(110vh)}
-}
 </style>
 </head>
 
 <body>
-<div class="bg" id="bg"></div>
-
 <div class="app" id="app">
-  <div class="left">
-    <div class="tabs">
-      <div class="tab active">ルレット</div>
-    </div>
-
-    <textarea id="input" class="input"
-      placeholder="改行で区切る&#10;A&#10;B&#10;C">A
-B
-C</textarea>
-
-    <div class="volume">
-      <span>音量</span>
-      <input id="vol" type="range" min="0" max="1" step="0.01" value="0.7">
-    </div>
-  </div>
+  <div></div>
 
   <div class="center">
     <div id="result">▼ 抽選結果 ▼</div>
@@ -190,58 +88,33 @@ C</textarea>
   <div class="history" id="history"></div>
 </div>
 
-<div class="bottom">
-  <button id="gen">URL生成</button>
-  <div id="url"></div>
-</div>
-
 <audio id="timpani" src="https://soundeffect-lab.info/sound/battle/mp3/timpani-roll.mp3" loop></audio>
 <audio id="pafu" src="https://soundeffect-lab.info/sound/various/mp3/dondonpafupafu.mp3"></audio>
 
 <script>
-/* ===== 背景幾何 ===== */
-const bg=document.getElementById('bg');
-for(let i=0;i<20;i++){
-  const s=document.createElement('span');
-  s.style.left=Math.random()*100+'%';
-  s.style.animationDelay=Math.random()*8+'s';
-  bg.appendChild(s);
-}
-
-/* ===== 音 ===== */
-const timpani=document.getElementById('timpani');
-const pafu=document.getElementById('pafu');
-const vol=document.getElementById('vol');
-vol.oninput=()=>{timpani.volume=pafu.volume=vol.value};
-
-/* ===== ルーレット ===== */
 const canvas=document.getElementById('wheel');
 const ctx=canvas.getContext('2d');
 const hitText=document.getElementById('hitText');
 const history=document.getElementById('history');
-let items=[];
-let angle=0, spinning=false;
-let chaosTimer=null;
+const timpani=document.getElementById('timpani');
+const pafu=document.getElementById('pafu');
 
-function parseItems(){
-  items=document.getElementById('input').value
-    .split('\n').map(v=>v.trim()).filter(Boolean).slice(0,500);
-}
-document.getElementById('input').addEventListener('input', parseItems);
-parseItems();
+const colors=['#cceeff','#ffd6e7','#c9f2d8','#fff0c9','#e7d8c9'];
+
+let items=['A','B','C'];
+let angle=0;
+let spinning=false;
 
 function draw(hitIndex=null){
   ctx.clearRect(0,0,420,420);
-  const r=210, cx=210, cy=210;
-  const step=(Math.PI*2)/(items.length||1);
-  const colors=[var(--pastel1),var(--pastel2),var(--pastel3),var(--pastel4),var(--pastel5)];
+  const r=210,cx=210,cy=210;
+  const step=(Math.PI*2)/items.length;
 
   items.forEach((t,i)=>{
     ctx.beginPath();
     ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,r,angle+i*step,angle+(i+1)*step);
-    ctx.closePath();
-    ctx.fillStyle=(i===hitIndex)?'#ff9aa2':'#cceeff';
+    ctx.fillStyle=(i===hitIndex)?'#ff9aa2':colors[i%colors.length];
     ctx.fill();
     ctx.strokeStyle='#fff';
     ctx.stroke();
@@ -251,73 +124,40 @@ function draw(hitIndex=null){
     ctx.rotate(angle+i*step+step/2);
     ctx.textAlign='right';
     ctx.fillStyle='#333';
-    ctx.font='16px sans-serif';
-    ctx.fillText(t, r-10, 5);
+    ctx.fillText(t,r-10,5);
     ctx.restore();
   });
 
   // ▼ 上判定
   ctx.fillStyle='#000';
   ctx.beginPath();
-  ctx.moveTo(cx-12, cy-r-8);
-  ctx.lineTo(cx+12, cy-r-8);
-  ctx.lineTo(cx, cy-r-28);
+  ctx.moveTo(cx-12,cy-r-8);
+  ctx.lineTo(cx+12,cy-r-8);
+  ctx.lineTo(cx,cy-r-28);
   ctx.fill();
-
-  // 透かし
-  ctx.fillStyle='rgba(0,0,0,.25)';
-  ctx.font='26px sans-serif';
-  ctx.textAlign='center';
-  ctx.fillText('抽選開始',cx,cy+10);
 }
 
-function getHitIndex(){
-  const step=(Math.PI*2)/(items.length||1);
-  const pointer=(Math.PI*1.5 + angle)%(Math.PI*2);
+function getHit(){
+  const step=(Math.PI*2)/items.length;
+  const pointer=(Math.PI*1.5-angle+Math.PI*2)%(Math.PI*2);
   return Math.floor(pointer/step);
 }
 
-/* ===== カオス抽選 ===== */
-function pickChaos(){
-  const r=Math.random();
-  if(r<0.30) return 'SAFE';
-  if(r<0.40) return 'SPICE';
-  if(r<0.43) return 'CHAOS';
-  return null;
-}
-function startChaos(kind){
-  clearTimeout(chaosTimer);
-  resetChaos();
-  if(!kind) return;
-
-  if(kind==='SAFE'){
-    document.getElementById('app').classList.add('shake');
-  }
-  if(kind==='SPICE'){
-    document.body.classList.add('invert');
-    document.body.classList.add('glitch');
-    document.body.insertAdjacentHTML('beforeend','<div class="flash"></div>');
-  }
-  if(kind==='CHAOS'){
-    document.body.classList.add('pixel','vignette');
-  }
-  chaosTimer=setTimeout(resetChaos,5000);
-}
-function resetChaos(){
-  document.body.className='';
-  document.getElementById('app').className='app';
+function chaos(){
+  document.body.classList.add('shake','invert');
+  setTimeout(()=>{
+    document.body.className='';
+  },5000);
 }
 
-/* ===== 回転 ===== */
 function spin(){
-  if(spinning || items.length===0) return;
+  if(spinning)return;
   spinning=true;
-  timpani.currentTime=0; timpani.play();
+  timpani.currentTime=0;
+  timpani.play();
   hitText.textContent='抽選中…';
 
   let speed=Math.random()*0.4+0.3;
-  const chaos=pickChaos();
-
   function loop(){
     angle+=speed;
     speed*=0.985;
@@ -325,33 +165,27 @@ function spin(){
     if(speed<0.002){
       spinning=false;
       timpani.pause();
-      const hit=getHitIndex();
+      const hit=getHit();
       draw(hit);
       hitText.textContent=items[hit];
-      pafu.currentTime=0; pafu.play();
+      pafu.currentTime=0;
+      pafu.play();
 
       const d=document.createElement('div');
       d.textContent=items[hit];
       history.prepend(d);
-      while(history.children.length>20) history.removeChild(history.lastChild);
+      while(history.children.length>20)history.removeChild(history.lastChild);
 
-      startChaos(chaos);
+      if(Math.random()<0.3)chaos();
       return;
     }
     requestAnimationFrame(loop);
   }
   loop();
 }
-canvas.addEventListener('click', spin);
-draw();
 
-/* ===== URL ===== */
-document.getElementById('gen').onclick=()=>{
-  const u=new URL(location.href);
-  u.searchParams.set('items', encodeURIComponent(items.join('\n')));
-  document.getElementById('url').innerHTML=
-    u.toString()+` <button onclick="navigator.clipboard.writeText('${u}')">コピー</button>`;
-};
+canvas.onclick=spin;
+draw();
 </script>
 </body>
 </html>
