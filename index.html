@@ -3,85 +3,102 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>究極のルーレット - 重なり修正版</title>
+<title>ルレット</title>
 <style>
   :root {
-    --vivid-blue: #4ECDC4;
     --vivid-red: #FF6B6B;
-    --active-teal: #B2DFDB;
+    --vivid-blue: #4ECDC4;
+    --pastel-bg: #fdfdfd;
   }
 
   body {
     margin: 0; padding: 0;
-    font-family: 'M PLUS Rounded 1c', sans-serif;
-    background-color: #fff;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--pastel-bg);
     display: flex; justify-content: center; align-items: center;
     height: 100vh; overflow: hidden;
   }
 
-  /* 背景幾何学 */
+  /* 背景：軽い幾何学模様 */
   #bg-canvas {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: -1; opacity: 0.3; pointer-events: none;
+    z-index: -1; opacity: 0.2; pointer-events: none;
   }
 
-  #container {
-    display: flex; width: 96vw; height: 90vh; gap: 20px;
+  #app-container {
+    display: flex; width: 98vw; height: 95vh; gap: 20px;
   }
 
-  /* 左：設定 */
-  #side-l { width: 20%; display: flex; flex-direction: column; gap: 10px; }
-  .vol-ctrl { display: flex; flex-direction: column; align-items: center; background: #f5f5f5; padding: 10px; border-radius: 15px; }
-  input[type="range"] { writing-mode: bt-lr; -webkit-appearance: slider-vertical; height: 150px; accent-color: var(--vivid-blue); }
+  /* --- 左：タブ・設定 --- */
+  #panel-left {
+    width: 20%; display: flex; flex-direction: column; gap: 15px;
+  }
+  .vol-setting {
+    display: flex; flex-direction: column; align-items: center;
+    background: #fff; padding: 15px; border-radius: 15px; border: 1px solid #ddd;
+  }
+  input[type="range"] {
+    writing-mode: bt-lr; -webkit-appearance: slider-vertical;
+    height: 150px; accent-color: var(--vivid-blue);
+  }
   .tab-list { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-  .tab { padding: 12px; border: 2px solid #ddd; border-radius: 10px; cursor: pointer; text-align: center; font-weight: bold; }
-  .tab.active { background: var(--active-teal); border-color: var(--vivid-blue); border-radius: 20px; }
+  .tab-btn {
+    padding: 12px; border: 2px solid #eee; border-radius: 10px;
+    background: white; cursor: pointer; font-weight: bold; text-align: center;
+  }
+  .tab-btn.active { background: #E0F2F1; border-color: var(--vivid-blue); border-radius: 20px; }
 
-  /* 中央：メイン配置 */
-  #main {
+  /* --- 中央：メイン（ここが指示通りの並び順） --- */
+  #panel-center {
     flex: 1; display: flex; flex-direction: column; align-items: center;
   }
 
+  /* 題名 */
+  h1 { font-size: 24px; color: #555; margin: 10px 0; }
+
   /* 1. 記入スペース */
   #input-box {
-    width: 85%; height: 80px; margin-bottom: 10px;
-    border-radius: 15px; border: 2px solid #eee; padding: 12px;
-    font-size: 16px; font-family: inherit; resize: none; outline: none;
+    width: 90%; height: 90px; margin-bottom: 10px;
+    border-radius: 12px; border: 2px solid #ddd; padding: 12px;
+    font-size: 18px; resize: none; outline: none; box-sizing: border-box;
   }
 
   /* 2. 結果内容 */
-  #result {
-    font-size: 50px; font-weight: 900; color: #333;
-    min-height: 70px; margin-bottom: 20px;
-    text-decoration: underline 6px var(--vivid-red);
-    text-underline-offset: 10px; text-align: center;
+  #result-text {
+    font-size: 52px; font-weight: 900; color: #333;
+    min-height: 70px; margin-bottom: 5px; text-align: center;
+    text-decoration: underline 8px var(--vivid-red); text-underline-offset: 12px;
   }
 
-  /* 3 & 4. 円盤と▼（重なり重視） */
+  /* 3 & 4. ▼（判定）とその下に 円盤 */
   #wheel-wrapper {
     position: relative; cursor: pointer;
-    display: flex; justify-content: center;
+    display: flex; flex-direction: column; align-items: center;
   }
 
-  /* 判定の▼：円盤の上にしっかり被せる */
+  /* 判定の▼：円盤の上に絶対配置で被せる */
   #indicator {
     position: absolute;
-    top: -5px; /* ここを調整して円盤に被せています */
-    left: 50%; transform: translateX(-50%);
+    top: -5px; /* ここで円盤に被せています */
     width: 0; height: 0;
     border-left: 25px solid transparent;
     border-right: 25px solid transparent;
-    border-top: 45px solid var(--vivid-red); /* 少し長めに */
-    z-index: 100;
-    /* 白いフチをつけて見やすく */
-    filter: drop-shadow(0 0 2px white) drop-shadow(0 4px 4px rgba(0,0,0,0.2));
+    border-top: 45px solid var(--vivid-red); /* 下向きの▼ */
+    z-index: 10;
+    filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
   }
 
-  canvas#wheel { border-radius: 50%; }
+  canvas#wheel {
+    border-radius: 50%;
+    margin-top: 0; /* ▼と位置を合わせる */
+  }
 
-  /* 右：履歴 */
-  #side-r { width: 20%; display: flex; flex-direction: column; }
-  #history-box { flex: 1; border: 4px solid var(--vivid-red); border-radius: 25px; background: #fff; padding: 15px; overflow-y: auto; }
+  /* --- 右：履歴 --- */
+  #panel-right { width: 20%; display: flex; flex-direction: column; }
+  #history-frame {
+    flex: 1; border: 4px solid var(--vivid-red); border-radius: 25px;
+    background: white; padding: 15px; overflow-y: auto;
+  }
   #history-list { list-style: none; padding: 0; font-size: 22px; font-weight: bold; }
   #history-list li { padding: 8px 0; border-bottom: 1px dashed #ffdada; }
 
@@ -91,29 +108,31 @@
 
 <canvas id="bg-canvas"></canvas>
 
-<div id="container">
-  <div id="side-l">
-    <div class="vol-ctrl">
+<div id="app-container">
+  <div id="panel-left">
+    <div class="vol-setting">
       <span>大</span>
       <input type="range" id="vol" min="0" max="1" step="0.1" value="0.5">
       <span>小</span>
-      <label style="font-size:10px; margin-top:5px;"><input type="checkbox" id="snd" checked>音</label>
+      <label style="margin-top:5px; font-size:12px;"><input type="checkbox" id="snd-on" checked> 音ON</label>
     </div>
-    <div id="tab-list" class="tab-list"></div>
-    <button onclick="genURL()" style="background:var(--vivid-blue); color:white; border:none; padding:10px; border-radius:10px; cursor:pointer; font-weight:bold;">URL発行</button>
+    <div id="tabs" class="tab-list"></div>
+    <button onclick="shareURL()" style="padding:10px; background:var(--vivid-blue); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">URL発行</button>
   </div>
 
-  <div id="main">
-    <textarea id="input-box" placeholder="改行で入力..."></textarea>
-    <div id="result"></div>
-    <div id="wheel-wrapper" onclick="start()">
+  <div id="panel-center">
+    <h1>ルレット</h1>
+    <textarea id="input-box" placeholder="項目を改行で入力..."></textarea>
+    <div id="result-text"></div>
+    
+    <div id="wheel-wrapper" onclick="startSpin()">
       <div id="indicator"></div>
-      <canvas id="wheel" width="500" height="500"></canvas>
+      <canvas id="wheel" width="520" height="520"></canvas>
     </div>
   </div>
 
-  <div id="side-r">
-    <div id="history-box">
+  <div id="panel-right">
+    <div id="history-frame">
       <div style="text-align:center; color:var(--vivid-red); font-weight:bold; margin-bottom:10px;">履歴</div>
       <ul id="history-list"></ul>
     </div>
@@ -122,108 +141,143 @@
 
 <script>
   let state = {
-    tabs: [{ name: "ルーレット1", items: ["A", "B", "C"] }],
-    active: 0,
+    tabs: [{ name: "ルレット1", items: ["あたり", "はずれ", "もういっかい"] }],
+    activeIdx: 0,
     angle: 0,
-    spinning: false,
+    isSpinning: false,
     history: []
   };
 
   const colors = ["#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF", "#E2F0CB", "#FFDAC1", "#E0BBE4"];
   const canvas = document.getElementById('wheel');
   const ctx = canvas.getContext('2d');
-  const audio = new (window.AudioContext || window.webkitAudioContext)();
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
   function init() {
     renderTabs();
-    loadContent();
+    loadActive();
     drawBG();
   }
 
   function renderTabs() {
-    const list = document.getElementById('tab-list');
-    list.innerHTML = state.tabs.map((t, i) => `
-      <div class="tab ${i === state.active ? 'active' : ''}" onclick="state.active=${i};renderTabs();loadContent();">${t.name}</div>
+    const box = document.getElementById('tabs');
+    box.innerHTML = state.tabs.map((t, i) => `
+      <div class="tab-btn ${i === state.activeIdx ? 'active' : ''}" onclick="state.activeIdx=${i};renderTabs();loadActive();">${t.name}</div>
     `).join('');
   }
 
-  function loadContent() {
-    document.getElementById('input-box').value = state.tabs[state.active].items.join('\n');
+  function loadActive() {
+    document.getElementById('input-box').value = state.tabs[state.activeIdx].items.join('\n');
     drawWheel();
   }
 
-  function drawWheel(hit = -1) {
-    const items = state.tabs[state.active].items;
+  function drawWheel(hitIdx = -1) {
+    const items = state.tabs[state.activeIdx].items;
     if(!items.length) return;
+    const cx = 260, cy = 260, r = 250;
+    ctx.clearRect(0, 0, 520, 520);
     const step = (Math.PI * 2) / items.length;
-    ctx.clearRect(0,0,500,500);
+
     items.forEach((txt, i) => {
-      ctx.beginPath(); ctx.moveTo(250, 250);
-      ctx.arc(250, 250, 245, state.angle + i*step, state.angle + (i+1)*step);
-      ctx.fillStyle = (i === hit) ? "#FF007E" : colors[i % colors.length];
-      ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.stroke();
-      ctx.save(); ctx.translate(250, 250); ctx.rotate(state.angle + i*step + step/2);
-      ctx.fillStyle = "#333"; ctx.font = "bold 22px sans-serif"; ctx.textAlign = "right";
-      ctx.fillText(txt.slice(0, 10), 220, 8); ctx.restore();
+      const s = state.angle + i * step;
+      const e = s + step;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, s, e);
+      ctx.fillStyle = (i === hitIdx) ? "#FF007E" : colors[i % colors.length];
+      ctx.fill();
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(s + step / 2);
+      ctx.fillStyle = "#333";
+      ctx.font = "bold 20px sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(txt.slice(0, 10), r - 40, 8);
+      ctx.restore();
     });
-    ctx.beginPath(); ctx.arc(250, 250, 25, 0, Math.PI*2); ctx.fillStyle = "white"; ctx.fill();
+
+    // センター
+    ctx.beginPath(); ctx.arc(cx, cy, 25, 0, Math.PI * 2); ctx.fillStyle = "white"; ctx.fill();
   }
 
-  function start() {
-    if(state.spinning || state.tabs[state.active].items.length < 2) return;
-    state.spinning = true;
-    document.getElementById('result').textContent = "";
-    let speed = Math.random() * 0.4 + 0.4;
+  function startSpin() {
+    if(state.isSpinning || state.tabs[state.activeIdx].items.length < 2) return;
+    state.isSpinning = true;
+    document.getElementById('result-text').textContent = "";
+    
+    let speed = Math.random() * 0.4 + 0.5;
     const loop = () => {
-      state.angle += speed; speed *= 0.988;
-      play('roll');
-      if(speed < 0.0035) {
-        state.spinning = false;
-        const items = state.tabs[state.active].items;
-        const step = (Math.PI * 2) / items.length;
-        const hit = Math.floor(((Math.PI * 1.5 - state.angle % (Math.PI*2)) + Math.PI*2) % (Math.PI*2) / step);
-        drawWheel(hit);
-        const win = items[hit];
-        document.getElementById('result').textContent = win;
-        play('win');
-        state.history.unshift(win);
-        document.getElementById('history-list').innerHTML = state.history.slice(0,15).map(h=>`<li>${h}</li>`).join('');
+      state.angle += speed;
+      speed *= 0.988;
+      playBeep('roll');
+      if(speed < 0.003) {
+        state.isSpinning = false;
+        finalize();
         return;
       }
-      drawWheel(); requestAnimationFrame(loop);
+      drawWheel();
+      requestAnimationFrame(loop);
     };
     loop();
   }
 
-  function play(type) {
-    if(!document.getElementById('snd').checked) return;
+  function finalize() {
+    const items = state.tabs[state.activeIdx].items;
+    const step = (Math.PI * 2) / items.length;
+    // 真上(270度 = 1.5 * PI)を判定点にする
+    const pointer = (Math.PI * 1.5 - state.angle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    const hit = Math.floor(pointer / step);
+    
+    drawWheel(hit);
+    const win = items[hit];
+    document.getElementById('result-text').textContent = win;
+    playBeep('win');
+    state.history.unshift(win);
+    document.getElementById('history-list').innerHTML = state.history.slice(0, 15).map(h => `<li>${h}</li>`).join('');
+  }
+
+  function playBeep(type) {
+    if(!document.getElementById('snd-on').checked) return;
     const vol = document.getElementById('vol').value;
-    const g = audio.createGain(); g.connect(audio.destination);
-    g.gain.setValueAtTime(vol*0.2, audio.currentTime);
-    if(type==='roll') {
-      const o = audio.createOscillator(); o.type='sawtooth'; o.frequency.value=80; o.connect(g);
-      o.start(); o.stop(audio.currentTime+0.05);
+    const g = audioCtx.createGain(); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(vol * 0.15, audioCtx.currentTime);
+
+    if(type === 'roll') {
+      const o = audioCtx.createOscillator(); o.type = 'sawtooth';
+      o.frequency.value = 80; o.connect(g);
+      o.start(); o.stop(audioCtx.currentTime + 0.05);
     } else {
       [523, 659, 783].forEach((f, i) => {
-        const o=audio.createOscillator(); o.connect(g); o.frequency.value=f;
-        o.start(audio.currentTime+i*0.1); o.stop(audio.currentTime+0.5);
+        const o = audioCtx.createOscillator(); o.connect(g);
+        o.frequency.value = f; o.start(audioCtx.currentTime + i * 0.1);
+        o.stop(audioCtx.currentTime + 0.5);
       });
     }
   }
 
   document.getElementById('input-box').oninput = (e) => {
-    state.tabs[state.active].items = e.target.value.split('\n').filter(v=>v.trim());
+    state.tabs[state.activeIdx].items = e.target.value.split('\n').filter(v => v.trim());
     drawWheel();
   };
+
+  function shareURL() {
+    const d = btoa(encodeURIComponent(JSON.stringify(state.tabs)));
+    prompt("このURLを保存してね：", window.location.origin + window.location.pathname + "?d=" + d);
+  }
 
   function drawBG() {
     const c = document.getElementById('bg-canvas'); const b = c.getContext('2d');
     c.width = window.innerWidth; c.height = window.innerHeight;
-    for(let i=0; i<30; i++) {
-      b.fillStyle = colors[i%8]; b.globalAlpha=0.15;
-      b.fillRect(Math.random()*c.width, Math.random()*c.height, 40, 40);
+    for(let i=0; i<40; i++) {
+      b.fillStyle = colors[i%8]; b.globalAlpha = 0.15;
+      b.fillRect(Math.random()*c.width, Math.random()*c.height, 30, 30);
     }
   }
+
   init();
 </script>
 </body>
