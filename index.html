@@ -1,93 +1,89 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ルレット</title>
 
 <style>
-*{box-sizing:border-box;}
 body{
   margin:0;
   background:#fff;
-  font-family:system-ui, sans-serif;
-}
-.app{
-  width:100vw;
-  max-width:1600px;
-  margin:0 auto;
-  display:grid;
-  grid-template-columns:1fr 2fr 1fr;
-  gap:24px;
-  padding:24px 24px 96px;
-}
-.center{
+  font-family: system-ui, sans-serif;
   display:flex;
   flex-direction:column;
   align-items:center;
+  height:100vh;
+  justify-content:flex-start;
 }
+
+#result{
+  margin-top:24px;
+  font-size:32px;
+  font-weight:bold;
+  min-height:40px;
+}
+
+#wrap{
+  margin-top:24px;
+  position:relative;
+}
+
 canvas{
-  width:420px;
-  height:420px;
   cursor:pointer;
 }
-#hit{
-  font-size:40px;
-  font-weight:700;
-  margin-top:16px;
-  text-decoration:underline;
+
+/* ▼ 上判定マーク */
+#pointer{
+  position:absolute;
+  top:-18px;
+  left:50%;
+  transform:translateX(-50%);
+  width:0;
+  height:0;
+  border-left:12px solid transparent;
+  border-right:12px solid transparent;
+  border-bottom:18px solid #000;
 }
-.history{
-  border:2px solid red;
-  border-radius:12px;
-  padding:16px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.history div{font-size:22px;}
 </style>
 </head>
 
 <body>
-<div class="app">
-  <div></div>
 
-  <div class="center">
-    <canvas id="wheel" width="420" height="420"></canvas>
-    <div id="hit">—</div>
-  </div>
+<div id="result">▼ 抽選結果 ▼</div>
 
-  <div class="history" id="history"></div>
+<div id="wrap">
+  <div id="pointer"></div>
+  <canvas id="roulette" width="400" height="400"></canvas>
 </div>
 
 <script>
-const canvas = document.getElementById("wheel");
+const canvas = document.getElementById("roulette");
 const ctx = canvas.getContext("2d");
-const hitEl = document.getElementById("hit");
-const historyEl = document.getElementById("history");
+const resultEl = document.getElementById("result");
 
 const items = ["A","B","C"];
 let angle = 0;
+let speed = 0;
 let spinning = false;
 
-function draw(hitIndex=null){
-  ctx.clearRect(0,0,420,420);
+function draw(hitIndex = -1){
+  const cx = 200;
+  const cy = 200;
+  const r = 170;
+  const step = Math.PI * 2 / items.length;
 
-  const cx = 210;
-  const cy = 210;
-  const r = 200;
-  const step = Math.PI*2/items.length;
+  ctx.clearRect(0,0,400,400);
 
-  items.forEach((t,i)=>{
-    const start = angle + i*step;
-    const end = start + step;
+  items.forEach((text,i)=>{
+    const start = angle + i * step;
+    const end   = start + step;
 
     ctx.beginPath();
     ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,r,start,end);
     ctx.closePath();
-    ctx.fillStyle = (i===hitIndex) ? "#ffb3b3" : "#cceeff";
+    ctx.fillStyle = i === hitIndex ? "#ffb3b3" : "#cceeff";
     ctx.fill();
     ctx.strokeStyle="#fff";
     ctx.stroke();
@@ -96,39 +92,25 @@ function draw(hitIndex=null){
     ctx.translate(cx,cy);
     ctx.rotate(start + step/2);
     ctx.textAlign="right";
+    ctx.font="16px sans-serif";
     ctx.fillStyle="#333";
-    ctx.font="18px sans-serif";
-    ctx.fillText(t,r-14,6);
+    ctx.fillText(text, r-10, 5);
     ctx.restore();
   });
-
-  // ▼ 下の判定マーク
-  ctx.fillStyle="#000";
-  ctx.beginPath();
-  ctx.moveTo(cx-12, cy+r+8);
-  ctx.lineTo(cx+12, cy+r+8);
-  ctx.lineTo(cx, cy+r+28);
-  ctx.fill();
-
-  // 抽選開始テキスト
-  ctx.fillStyle="rgba(0,0,0,0.25)";
-  ctx.font="26px sans-serif";
-  ctx.textAlign="center";
-  ctx.fillText("抽選開始", cx, cy+8);
 }
 
 function getHitIndex(){
-  // 6時方向（下）＝ 90度
-  const pointerAngle = (Math.PI/2 - angle + Math.PI*2) % (Math.PI*2);
-  const step = Math.PI*2/items.length;
+  const step = Math.PI * 2 / items.length;
+  // 上（▼）＝ -90度
+  const pointerAngle = (Math.PI * 1.5 - angle + Math.PI * 2) % (Math.PI * 2);
   return Math.floor(pointerAngle / step);
 }
 
 function spin(){
   if(spinning) return;
   spinning = true;
-
-  let speed = Math.random()*0.3 + 0.25;
+  speed = Math.random() * 0.4 + 0.3;
+  resultEl.textContent = "抽選中…";
 
   function loop(){
     angle += speed;
@@ -137,17 +119,8 @@ function spin(){
     if(speed < 0.002){
       spinning = false;
       const hit = getHitIndex();
-      hitEl.textContent = items[hit];
-
-      const d = document.createElement("div");
-      d.textContent = items[hit];
-      historyEl.prepend(d);
-      while(historyEl.children.length > 20){
-        historyEl.removeChild(historyEl.lastChild);
-      }
-
       draw(hit);
-      setTimeout(()=>draw(),400);
+      resultEl.textContent = "結果： " + items[hit];
       return;
     }
     draw();
@@ -159,5 +132,6 @@ function spin(){
 canvas.addEventListener("click", spin);
 draw();
 </script>
+
 </body>
 </html>
