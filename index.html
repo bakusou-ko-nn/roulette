@@ -3,15 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>究極のルーレット</title>
+<title>究極のルーレット - 上部判定版</title>
 <style>
   :root {
     --bg-white: #ffffff;
     --pastel-blue: #e0f7fa;
     --vivid-blue: #4ECDC4;
-    --active-tab: #b2dfdb; /* 薄い青緑 */
+    --active-tab-bg: #E0F2F1; /* 薄い青緑 */
     --vivid-red: #FF6B6B;
-    --border-white: #ffffff;
   }
 
   body {
@@ -32,71 +31,69 @@
     top: 0; left: 0; width: 100%; height: 100%;
     z-index: -1;
     pointer-events: none;
+    opacity: 0.4;
   }
 
-  /* 16:9 っぽいメイン容器 */
   #main-container {
     display: flex;
     width: 95vw;
     height: 85vh;
     max-width: 1400px;
     position: relative;
-    gap: 20px;
+    gap: 30px;
+    align-items: center;
   }
 
-  /* 左側：タブエリア (1/4) */
+  /* 左側：タブ & 音量 (1/4) */
   #left-area {
     width: 20%;
+    height: 100%;
+    display: flex;
+    flex-direction: row; /* 音量スライダーとタブを横並びに */
+    gap: 15px;
+  }
+
+  #vol-control {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    padding-top: 20px;
+    align-items: center;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+  }
+
+  input[type="range"] {
+    writing-mode: bt-lr;
+    -webkit-appearance: slider-vertical;
+    width: 12px;
+    height: 150px;
+    accent-color: var(--vivid-blue);
   }
 
   .tab-list {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 10px;
   }
 
   .tab-item {
-    background: #f0f0f0;
-    border: 2px solid var(--vivid-blue);
-    padding: 15px;
-    border-radius: 15px 0 0 15px;
+    background: #fff;
+    border: 2px solid #a2cfca;
+    padding: 12px;
+    border-radius: 10px;
     cursor: pointer;
     font-weight: bold;
+    font-size: 14px;
+    text-align: center;
     transition: 0.3s;
-    display: flex;
-    justify-content: space-between;
   }
 
   .tab-item.active {
-    background: var(--active-tab);
-    border-radius: 15px; /* 選択中は丸く */
-  }
-
-  /* 左下：音量とURL */
-  #left-bottom {
-    margin-top: auto;
-    background: rgba(255,255,255,0.8);
-    padding: 15px;
-    border-radius: 15px;
-  }
-
-  #vol-slider-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: 100px;
-    margin-bottom: 10px;
-  }
-
-  input[type="range"] {
-    writing-mode: bt-lr; /* 縦向き */
-    -webkit-appearance: slider-vertical;
-    width: 8px;
-    height: 80px;
+    background: var(--active-tab-bg);
+    border: 2px solid var(--vivid-blue);
+    border-radius: 15px; /* 角をより丸く */
   }
 
   /* 中央：ルーレット本体 */
@@ -109,13 +106,34 @@
     position: relative;
   }
 
+  /* 結果表示を上に */
+  #result-text {
+    font-size: 42px;
+    font-weight: 900;
+    color: #333;
+    margin-bottom: 20px;
+    min-height: 60px;
+    text-decoration: underline 5px var(--vivid-red);
+    text-underline-offset: 8px;
+    z-index: 10;
+  }
+
   #wheel-wrapper {
     position: relative;
     cursor: pointer;
   }
 
-  canvas#wheel {
-    background: transparent;
+  /* 上の判定▲ */
+  #indicator {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 18px solid transparent;
+    border-right: 18px solid transparent;
+    border-top: 25px solid var(--vivid-red); /* 上から下を指す */
+    z-index: 10;
   }
 
   #start-hint {
@@ -124,89 +142,88 @@
     transform: translate(-50%, -50%);
     font-size: 24px;
     font-weight: bold;
-    color: rgba(0,0,0,0.2);
+    color: rgba(0,0,0,0.15);
     pointer-events: none;
   }
 
-  /* 下の判定▲ */
-  #indicator {
-    position: absolute;
-    bottom: -15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0; height: 0;
-    border-left: 20px solid transparent;
-    border-right: 20px solid transparent;
-    border-bottom: 30px solid var(--vivid-red);
-    z-index: 10;
+  canvas#wheel {
+    background: transparent;
   }
 
-  /* 当たった文字：アンダーバー付き */
-  #result-text {
-    margin-top: 20px;
-    font-size: 48px;
-    font-weight: 800;
-    color: #333;
-    text-decoration: underline 6px var(--vivid-red);
-    min-height: 60px;
-    z-index: 10;
-  }
-
-  /* 右側：履歴 (文字大きめ) */
-  #right-area {
-    width: 25%;
+  #input-container {
+    margin-top: 30px;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    padding-top: 20px;
+    align-items: center;
+  }
+
+  textarea {
+    width: 80%;
+    height: 60px;
+    border-radius: 12px;
+    padding: 10px;
+    border: 2px solid #eee;
+    font-family: inherit;
+    resize: none;
+  }
+
+  /* 右側：履歴 (縦長) */
+  #right-area {
+    width: 20%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   #history-box {
-    border: 3px solid var(--vivid-red);
+    border: 2px solid var(--vivid-red);
     border-radius: 20px;
-    height: 90%;
+    height: 80%;
     background: #fff;
-    padding: 20px;
+    padding: 15px;
     overflow-y: auto;
   }
 
   #history-list {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
     list-style: none;
     padding: 0;
+    margin: 0;
   }
 
   #history-list li {
-    padding: 10px 0;
-    border-bottom: 1px solid #eee;
+    padding: 8px 0;
+    border-bottom: 1px dashed #ffdada;
   }
 
-  /* 入力欄（下側に配置） */
-  #input-container {
+  /* 左下：URLエリア */
+  #url-area {
     position: absolute;
-    bottom: -20px;
-    width: 100%;
+    bottom: 0;
+    left: 0;
+    padding: 10px;
+  }
+
+  .url-controls {
     display: flex;
-    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
   }
 
-  textarea {
-    width: 60%;
-    height: 80px;
-    border-radius: 15px;
-    padding: 10px;
-    font-size: 16px;
-    border: 2px solid #ddd;
-  }
-
-  button.vivid-btn {
-    background: var(--vivid-blue);
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 10px;
+  button {
+    font-family: inherit;
     cursor: pointer;
+    border-radius: 8px;
+    border: none;
+    padding: 6px 12px;
+    font-weight: bold;
   }
+
+  .btn-vivid { background: var(--vivid-blue); color: white; }
 
 </style>
 </head>
@@ -216,42 +233,44 @@
 
 <div id="main-container">
   <div id="left-area">
-    <div id="vol-slider-container">
-      <span id="vol-label">大</span>
+    <div id="vol-control">
+      <span style="font-size:12px;">大</span>
       <input type="range" id="vol-slider" min="0" max="1" step="0.1" value="0.5">
-      <span>小</span>
+      <span style="font-size:12px;">小</span>
+      <label style="font-size:10px; margin-top:5px;"><input type="checkbox" id="mute-check" checked>音</label>
     </div>
     <div class="tab-list" id="tab-list"></div>
-    
-    <div id="left-bottom">
-      <button class="vivid-btn" onclick="generateURL()">🔗 URL発行</button>
-      <div id="url-output" style="font-size:10px; margin-top:5px; word-break:break-all;"></div>
-    </div>
   </div>
 
   <div id="center-area">
-    <div id="wheel-wrapper" onclick="startSpin()">
-      <canvas id="wheel" width="500" height="500"></canvas>
-      <div id="start-hint">抽選開始</div>
-      <div id="indicator"></div>
-    </div>
     <div id="result-text"></div>
-    
+    <div id="wheel-wrapper" onclick="startSpin()">
+      <div id="indicator"></div>
+      <canvas id="wheel" width="450" height="450"></canvas>
+      <div id="start-hint">抽選開始</div>
+    </div>
     <div id="input-container">
-      <textarea id="item-input" placeholder="改行で項目追加..."></textarea>
+      <textarea id="item-input" placeholder="ここに単語を改行で入力..."></textarea>
     </div>
   </div>
 
   <div id="right-area">
     <div id="history-box">
-      <div style="text-align:center; color:var(--vivid-red); font-weight:bold;">履歴</div>
+      <div style="text-align:center; color:var(--vivid-red); font-size:14px; margin-bottom:10px;">履歴</div>
       <ul id="history-list"></ul>
+    </div>
+  </div>
+
+  <div id="url-area">
+    <button class="btn-vivid" onclick="generateURL()">URLを発行</button>
+    <div id="url-display" class="url-controls" style="display:none;">
+      <input type="text" id="url-input" readonly style="width:150px; font-size:10px;">
+      <button class="btn-vivid" onclick="copyURL()">コピー</button>
     </div>
   </div>
 </div>
 
 <script>
-  // --- 状態管理 ---
   let state = {
     tabs: [{ name: "ルーレット1", items: ["A", "B", "C"] }],
     activeTab: 0,
@@ -264,21 +283,20 @@
   const canvas = document.getElementById('wheel');
   const ctx = canvas.getContext('2d');
   const colors = ["#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF", "#E2F0CB"];
-  const input = document.getElementById('item-input');
+  const itemInput = document.getElementById('item-input');
 
-  // --- 初期化 ---
   function init() {
     renderTabs();
-    input.value = state.tabs[state.activeTab].items.join('\n');
+    itemInput.value = state.tabs[state.activeTab].items.join('\n');
     drawWheel();
-    animateBG();
+    drawBG();
   }
 
-  // --- ルーレット描画 ---
   function drawWheel(hitIndex = -1) {
     const items = state.tabs[state.activeTab].items;
-    const cx = 250, cy = 250, r = 230;
-    ctx.clearRect(0, 0, 500, 500);
+    const cx = 225, cy = 225, r = 210;
+    ctx.clearRect(0, 0, 450, 450);
+    if (items.length === 0) return;
 
     const step = (Math.PI * 2) / items.length;
     items.forEach((text, i) => {
@@ -287,32 +305,31 @@
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.arc(cx, cy, r, s, e);
-      ctx.fillStyle = (i === hitIndex) ? "#FF0055" : colors[i % colors.length]; // 当たりはビビット
+      ctx.fillStyle = (i === hitIndex) ? "#FF0080" : colors[i % colors.length];
       ctx.fill();
       ctx.strokeStyle = "#fff";
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 3;
       ctx.stroke();
 
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(s + step / 2);
       ctx.fillStyle = "#333";
-      ctx.font = "bold 20px sans-serif";
-      ctx.fillText(text, r - 80, 5);
+      ctx.font = "bold 18px sans-serif";
+      ctx.fillText(text, r - 70, 5);
       ctx.restore();
     });
 
-    // 中心
     ctx.beginPath();
-    ctx.arc(cx, cy, 30, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 25, 0, Math.PI * 2);
     ctx.fillStyle = "#fff";
     ctx.fill();
   }
 
-  // --- 音声生成 (AudioContext) ---
+  // --- 音声 ---
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   function playSound(type) {
-    if (state.volume === 0) return;
+    if (!document.getElementById('mute-check').checked) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
@@ -320,66 +337,62 @@
     
     if (type === 'roll') {
       osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(100, audioCtx.currentTime);
-      gain.gain.setValueAtTime(state.volume * 0.1, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(80, audioCtx.currentTime);
+      gain.gain.setValueAtTime(state.volume * 0.05, audioCtx.currentTime);
       osc.start();
-      osc.stop(audioCtx.currentTime + 0.1);
+      osc.stop(audioCtx.currentTime + 0.05);
     } else {
-      // ぱぱーん
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(523, audioCtx.currentTime);
-      gain.gain.setValueAtTime(state.volume, audioCtx.currentTime);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.5);
+      // どんどんぱふぱふ (簡易再現)
+      [523, 659, 783].forEach((f, i) => {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.connect(g); g.connect(audioCtx.destination);
+        o.frequency.setValueAtTime(f, audioCtx.currentTime + i * 0.1);
+        g.gain.setValueAtTime(state.volume * 0.3, audioCtx.currentTime + i * 0.1);
+        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.4);
+        o.start(audioCtx.currentTime + i * 0.1);
+        o.stop(audioCtx.currentTime + i * 0.1 + 0.5);
+      });
     }
   }
 
-  // --- 回転ロジック ---
   function startSpin() {
     if (state.isSpinning || state.tabs[state.activeTab].items.length < 2) return;
     state.isSpinning = true;
     document.getElementById('start-hint').style.opacity = 0;
-    let speed = Math.random() * 0.4 + 0.3;
+    let speed = Math.random() * 0.5 + 0.4;
     
-    function loop() {
+    function anim() {
       state.angle += speed;
-      speed *= 0.985;
+      speed *= 0.988;
       playSound('roll');
-      if (speed < 0.005) {
+      if (speed < 0.004) {
         state.isSpinning = false;
-        finishSpin();
+        const items = state.tabs[state.activeTab].items;
+        const step = (Math.PI * 2) / items.length;
+        // 判定：真上(1.5 * PI)から今の角度を引く
+        const pointer = (Math.PI * 1.5 - state.angle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+        const hit = Math.floor(pointer / step);
+        
+        drawWheel(hit);
+        const winner = items[hit];
+        document.getElementById('result-text').textContent = winner;
+        playSound('fanfare');
+        addHistory(winner);
         return;
       }
       drawWheel();
-      requestAnimationFrame(loop);
+      requestAnimationFrame(anim);
     }
-    loop();
+    anim();
   }
 
-  function finishSpin() {
-    const items = state.tabs[state.activeTab].items;
-    const step = (Math.PI * 2) / items.length;
-    // 下の判定 (PI/2)
-    const pointer = (Math.PI / 2 - state.angle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-    const hit = Math.floor(pointer / step);
-    
-    drawWheel(hit);
-    const winner = items[hit];
-    document.getElementById('result-text').textContent = winner;
-    playSound('fanfare');
-    addHistory(winner);
-    explode();
-  }
-
-  // --- 履歴 ---
   function addHistory(val) {
     state.history.unshift(val);
     if (state.history.length > 20) state.history.pop();
-    const list = document.getElementById('history-list');
-    list.innerHTML = state.history.map(h => `<li>${h}</li>`).join('');
+    document.getElementById('history-list').innerHTML = state.history.map(h => `<li>${h}</li>`).join('');
   }
 
-  // --- タブ切り替え ---
   function renderTabs() {
     const container = document.getElementById('tab-list');
     container.innerHTML = state.tabs.map((t, i) => `
@@ -391,43 +404,44 @@
 
   function switchTab(idx) {
     state.activeTab = idx;
-    input.value = state.tabs[idx].items.join('\n');
+    itemInput.value = state.tabs[idx].items.join('\n');
     renderTabs();
     drawWheel();
   }
 
-  // --- 入力連動 ---
-  input.addEventListener('input', () => {
-    state.tabs[state.activeTab].items = input.value.split('\n').filter(v => v.trim() !== '');
+  itemInput.addEventListener('input', () => {
+    state.tabs[state.activeTab].items = itemInput.value.split('\n').filter(v => v.trim() !== '');
     drawWheel();
   });
 
-  // --- URL発行 ---
+  document.getElementById('vol-slider').addEventListener('input', (e) => state.volume = e.target.value);
+
   function generateURL() {
     const data = btoa(encodeURIComponent(JSON.stringify(state.tabs)));
     const url = window.location.origin + window.location.pathname + "?d=" + data;
-    document.getElementById('url-output').innerHTML = `
-      ${url} <button onclick="navigator.clipboard.writeText('${url}')">コピー</button>
-    `;
+    document.getElementById('url-input').value = url;
+    document.getElementById('url-display').style.display = 'flex';
   }
 
-  // --- 爆発エフェクト & 背景 ---
-  const bgCanvas = document.getElementById('geo-bg');
-  const bgCtx = bgCanvas.getContext('2d');
-  function animateBG() {
-    bgCanvas.width = window.innerWidth;
-    bgCanvas.height = window.innerHeight;
-    // 幾何学模様を薄く描画（静的）
-    for(let i=0; i<10; i++) {
-      bgCtx.fillStyle = "rgba(200,200,200,0.1)";
-      bgCtx.beginPath();
-      bgCtx.fillRect(Math.random()*innerWidth, Math.random()*innerHeight, 30, 30);
+  function copyURL() {
+    const copyText = document.getElementById("url-input");
+    copyText.select();
+    navigator.clipboard.writeText(copyText.value);
+    alert("URLをコピーしました！");
+  }
+
+  function drawBG() {
+    const bg = document.getElementById('geo-bg');
+    const bctx = bg.getContext('2d');
+    bg.width = window.innerWidth;
+    bg.height = window.innerHeight;
+    for(let i=0; i<15; i++) {
+      bctx.fillStyle = colors[i % colors.length];
+      bctx.beginPath();
+      if(i%2===0) bctx.fillRect(Math.random()*bg.width, Math.random()*bg.height, 20, 20);
+      else bctx.arc(Math.random()*bg.width, Math.random()*bg.height, 10, 0, 7);
+      bctx.fill();
     }
-  }
-
-  function explode() {
-    // 簡易的な爆発演出（実際はパーティクルJSなどを使うがここではCSS/Canvasで代用）
-    console.log("パパーン！爆発演出");
   }
 
   init();
