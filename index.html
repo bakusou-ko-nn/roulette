@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>究極のルーレット</title>
+<title>究極のルーレット - 縦並び完全版</title>
 <style>
   :root {
     --bg-white: #ffffff;
@@ -14,468 +14,302 @@
   }
 
   body {
-    margin: 0;
-    padding: 0;
+    margin: 0; padding: 0;
     font-family: 'M PLUS Rounded 1c', sans-serif;
     background-color: var(--bg-white);
-    overflow: hidden;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
+    display: flex; justify-content: center; align-items: center;
+    height: 100vh; overflow: hidden;
   }
 
   /* 背景：幾何学模様 */
-  #geo-canvas {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    z-index: -1;
-    pointer-events: none;
-    opacity: 0.5;
+  #bg-layer {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1; pointer-events: none; opacity: 0.4;
   }
 
-  #main-layout {
-    display: flex;
-    width: 95vw;
-    height: 95vh;
-    max-width: 1400px;
-    align-items: stretch;
-    padding: 20px 0;
+  #layout-container {
+    display: flex; width: 95vw; height: 90vh; gap: 30px;
   }
 
-  /* --- 左側：音量・タブ・URL --- */
-  #left-panel {
-    width: 25%;
-    display: flex;
-    flex-direction: row;
-    gap: 15px;
+  /* --- 左：音量・タブ・URL --- */
+  #side-left {
+    width: 20%; display: flex; flex-direction: row; gap: 15px;
   }
-
-  /* 音量スライダー（縦） */
-  #vol-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: #f9f9f9;
-    padding: 10px;
-    border-radius: 20px;
-    border: 1px solid #eee;
-    height: fit-content;
+  #vol-control {
+    display: flex; flex-direction: column; align-items: center;
+    background: #f9f9f9; padding: 15px; border-radius: 20px; border: 1px solid #eee;
   }
   input[type="range"] {
-    writing-mode: bt-lr;
-    -webkit-appearance: slider-vertical;
-    width: 12px; height: 180px;
-    accent-color: var(--vivid-blue);
+    writing-mode: bt-lr; -webkit-appearance: slider-vertical;
+    width: 12px; height: 200px; accent-color: var(--vivid-blue);
+  }
+  #tab-container {
+    flex: 1; display: flex; flex-direction: column; gap: 10px;
+  }
+  .tab {
+    padding: 15px; background: #fff; border: 2px solid #ddd;
+    border-radius: 10px; cursor: pointer; font-weight: bold; text-align: center;
+  }
+  .tab.active {
+    background: var(--active-teal); border-color: var(--vivid-blue); border-radius: 20px;
   }
 
-  /* タブリスト */
-  #tab-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .tab-item {
-    padding: 15px;
-    background: #fff;
-    border: 2px solid #ddd;
-    border-radius: 10px;
-    cursor: pointer;
-    font-weight: bold;
-    text-align: center;
-    transition: 0.3s;
-  }
-  .tab-item.active {
-    background: var(--active-teal);
-    border-color: var(--vivid-blue);
-    border-radius: 20px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  /* --- 中央：メイン（指示通りの垂直配置） --- */
+  #main-center {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
   }
 
-  /* URLエリア（左下） */
-  #url-area {
-    margin-top: auto;
-    background: #f0f0f0;
-    padding: 10px;
-    border-radius: 10px;
-    font-size: 11px;
+  /* 1. 記入スペース（一番上） */
+  #item-input {
+    width: 90%; height: 100px; margin-bottom: 20px;
+    border-radius: 15px; border: 2px solid #eee; padding: 15px;
+    font-size: 18px; font-family: inherit; resize: none; outline: none;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
   }
 
-  /* --- 中央：メイン（ここが重要） --- */
-  #center-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    padding: 0 20px;
-  }
-
-  /* 1. 記入スペース */
-  #input-box {
-    width: 90%;
-    height: 80px;
-    border-radius: 15px;
-    padding: 10px;
-    border: 2px solid #eee;
-    font-size: 16px;
-    font-family: inherit;
-    resize: none;
-    margin-bottom: 10px;
-    outline: none;
-  }
-
-  /* 2. 結果内容 */
-  #result-text {
-    font-size: 56px;
-    font-weight: 900;
-    color: #333;
-    min-height: 80px;
+  /* 2. 結果内容（その下） */
+  #result-display {
+    font-size: 60px; font-weight: 900; color: #333;
+    min-height: 80px; margin-bottom: 30px; /* 余白を確保 */
     text-decoration: underline 8px var(--vivid-red);
-    text-underline-offset: 12px;
-    margin-bottom: 20px;
-    text-align: center;
+    text-underline-offset: 12px; text-align: center;
   }
 
-  /* 3 & 4. 判定▼と円盤 */
-  #wheel-container {
-    position: relative;
-    cursor: pointer;
+  /* 3 & 4. 判定▼ と 円盤（判定が上に重なるように） */
+  #wheel-area {
+    position: relative; cursor: pointer;
+    margin-top: 10px; /* 全体を少し下にずらす */
   }
-  #indicator-top {
-    position: absolute;
-    top: -10px; /* 円盤に若干被る */
-    left: 50%;
-    transform: translateX(-50%);
+  #indicator-arrow {
+    position: absolute; 
+    top: -20px; /* 円盤の縁に被るように配置 */
+    left: 50%; transform: translateX(-50%);
     width: 0; height: 0;
-    border-left: 25px solid transparent;
-    border-right: 25px solid transparent;
-    border-top: 35px solid var(--vivid-red);
-    z-index: 30;
-    filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1));
+    border-left: 25px solid transparent; border-right: 25px solid transparent;
+    border-top: 40px solid var(--vivid-red); /* 下向きの三角形 */
+    z-index: 100; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.15));
   }
-  #start-guide {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 32px;
-    font-weight: bold;
-    color: rgba(0,0,0,0.1);
-    pointer-events: none;
-    background: rgba(255,255,255,0.5);
-    padding: 10px 20px;
-    border-radius: 40px;
-  }
+  canvas#wheel-canvas { border-radius: 50%; }
 
-  canvas#wheel {
-    border-radius: 50%;
-    background: transparent;
+  /* --- 右：履歴 --- */
+  #side-right { width: 20%; display: flex; flex-direction: column; }
+  #history-frame {
+    flex: 1; border: 4px solid var(--vivid-red); border-radius: 30px;
+    background: #fff; padding: 20px; overflow-y: auto;
   }
+  #history-list { list-style: none; padding: 0; font-size: 24px; font-weight: bold; }
+  #history-list li { padding: 10px 0; border-bottom: 1px dashed #ffdada; }
 
-  /* --- 右側：履歴 --- */
-  #right-panel {
-    width: 25%;
-    display: flex;
-    flex-direction: column;
-  }
-  #history-container {
-    flex: 1;
-    border: 4px solid var(--vivid-red);
-    border-radius: 30px;
-    background: #fff;
-    padding: 20px;
-    overflow-y: auto;
-  }
-  #history-list {
-    list-style: none;
-    padding: 0;
-    font-size: 26px;
-    font-weight: bold;
-  }
-  #history-list li {
-    padding: 12px 0;
-    border-bottom: 1px dashed #ffdada;
-  }
-
-  /* 演出用 */
-  #effect-canvas {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none;
-    z-index: 20;
-  }
-
-  .btn-vivid {
-    background: var(--vivid-blue);
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
+  /* URL・演出 */
+  #url-section { margin-top: auto; padding: 10px; font-size: 10px; }
+  #fx-canvas {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 50;
   }
 </style>
 </head>
 <body>
 
-<canvas id="geo-canvas"></canvas>
+<canvas id="bg-layer"></canvas>
 
-<div id="main-layout">
-  <div id="left-panel">
-    <div id="vol-container">
-      <span style="font-weight:bold; color:#666;">大</span>
+<div id="layout-container">
+  <div id="side-left">
+    <div id="vol-control">
+      <span style="font-weight:bold;">大</span>
       <input type="range" id="vol-slider" min="0" max="1" step="0.1" value="0.5">
-      <span style="font-weight:bold; color:#666;">小</span>
-      <label style="font-size:12px; margin-top:10px;"><input type="checkbox" id="sound-toggle" checked>音</label>
+      <span style="font-weight:bold;">小</span>
+      <label style="font-size:12px; margin-top:10px;"><input type="checkbox" id="sound-chk" checked>音</label>
     </div>
-    <div id="tab-area">
+    <div id="tab-container">
       <div id="tab-list"></div>
-      <div id="url-area">
-        <button class="btn-vivid" onclick="generateURL()">🔗 URL発行</button>
-        <div id="url-box" style="display:none; margin-top:8px;">
-          <input type="text" id="url-input" readonly style="width:70%; font-size:10px;">
-          <button class="btn-vivid" style="padding:4px 8px;" onclick="copyURL()">コピー</button>
+      <div id="url-section">
+        <button onclick="makeURL()" style="background:var(--vivid-blue); color:white; border:none; padding:10px; border-radius:10px; cursor:pointer; font-weight:bold;">URL発行</button>
+        <div id="url-box" style="display:none; margin-top:10px; word-break:break-all;">
+          <input type="text" id="url-output" readonly style="width:100%;">
+          <button onclick="copyURL()" style="margin-top:5px; padding:2px 10px;">コピー</button>
         </div>
       </div>
     </div>
   </div>
 
-  <div id="center-panel">
-    <textarea id="input-box" placeholder="項目を改行で入力..."></textarea>
-    <div id="result-text"></div>
-    <div id="wheel-container" onclick="handleSpin()">
-      <div id="indicator-top"></div>
-      <canvas id="wheel" width="550" height="550"></canvas>
-      <div id="start-guide">抽選開始</div>
+  <div id="main-center">
+    <textarea id="item-input" placeholder="項目を改行で入力してね"></textarea>
+    <div id="result-display"></div>
+    <div id="wheel-area" onclick="launchSpin()">
+      <div id="indicator-arrow"></div>
+      <canvas id="wheel-canvas" width="520" height="520"></canvas>
     </div>
-    <canvas id="effect-canvas"></canvas>
+    <canvas id="fx-canvas"></canvas>
   </div>
 
-  <div id="right-panel">
-    <div id="history-container">
-      <div style="text-align:center; color:var(--vivid-red); font-weight:900; margin-bottom:15px;">履歴</div>
+  <div id="side-right">
+    <div id="history-frame">
+      <div style="text-align:center; color:var(--vivid-red); font-weight:900; margin-bottom:10px;">履歴</div>
       <ul id="history-list"></ul>
     </div>
   </div>
 </div>
 
 <script>
-  let state = {
+  let config = {
     tabs: [{ name: "ルーレット1", items: ["A", "B", "C"] }],
-    activeIndex: 0,
-    history: [],
+    currentTab: 0,
     angle: 0,
-    spinning: false,
-    volume: 0.5
+    isRolling: false,
+    history: []
   };
 
-  const canvas = document.getElementById('wheel');
+  const colors = ["#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF", "#E2F0CB", "#FFDAC1", "#E0BBE4"];
+  const canvas = document.getElementById('wheel-canvas');
   const ctx = canvas.getContext('2d');
-  const effCanvas = document.getElementById('effect-canvas');
-  const effCtx = effCanvas.getContext('2d');
-  const pastelColors = ["#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF", "#E2F0CB", "#FFDAC1", "#E0BBE4"];
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
   function init() {
-    effCanvas.width = effCanvas.parentElement.clientWidth;
-    effCanvas.height = effCanvas.parentElement.clientHeight;
-    
-    // URLからの復元
-    const params = new URLSearchParams(window.location.search);
-    if(params.has('d')) {
-      try { state.tabs = JSON.parse(decodeURIComponent(atob(params.get('d')))); } catch(e){}
-    }
-    
-    renderTabs();
-    loadTab();
-    drawBG();
+    renderTabUI();
+    loadTabContent();
+    drawStaticBG();
   }
 
-  function loadTab() {
-    document.getElementById('input-box').value = state.tabs[state.activeIndex].items.join('\n');
+  function renderTabUI() {
+    const list = document.getElementById('tab-list');
+    list.innerHTML = config.tabs.map((t, i) => `
+      <div class="tab ${i === config.currentTab ? 'active' : ''}" onclick="switchTab(${i})">${t.name}</div>
+    `).join('') + (config.tabs.length < 5 ? `<div class="tab" style="color:#aaa" onclick="addTab()">+</div>` : '');
+  }
+
+  function loadTabContent() {
+    document.getElementById('item-input').value = config.tabs[config.currentTab].items.join('\n');
     drawWheel();
   }
 
-  function drawWheel(hitIdx = -1) {
-    const items = state.tabs[state.activeIndex].items;
-    const cx = 275, cy = 275, r = 265;
-    ctx.clearRect(0,0,550,550);
-    if(items.length === 0) return;
-
+  function drawWheel(hitIndex = -1) {
+    const items = config.tabs[config.currentTab].items;
+    if(!items.length) return;
+    const cx = 260, cy = 260, r = 250;
+    ctx.clearRect(0, 0, 520, 520);
     const step = (Math.PI * 2) / items.length;
+
     items.forEach((txt, i) => {
-      const s = state.angle + i * step;
+      const s = config.angle + i * step;
       const e = s + step;
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.arc(cx, cy, r, s, e);
-      // 当たったところだけビビットなピンクに
-      ctx.fillStyle = (i === hitIdx) ? "#FF007C" : pastelColors[i % pastelColors.length];
+      ctx.fillStyle = (i === hitIndex) ? "#FF007E" : colors[i % colors.length];
       ctx.fill();
       ctx.strokeStyle = "#fff";
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 3;
       ctx.stroke();
 
       ctx.save();
       ctx.translate(cx, cy);
-      ctx.rotate(s + step/2);
+      ctx.rotate(s + step / 2);
       ctx.fillStyle = "#333";
-      ctx.font = "bold 24px sans-serif";
+      ctx.font = "bold 22px sans-serif";
       ctx.textAlign = "right";
-      ctx.fillText(txt.slice(0,10), r - 40, 8);
+      ctx.fillText(txt.slice(0, 10), r - 30, 8);
       ctx.restore();
     });
 
-    // センターサークル
-    ctx.beginPath();
-    ctx.arc(cx, cy, 30, 0, Math.PI*2);
-    ctx.fillStyle = "#fff";
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI * 2); ctx.fillStyle = "white"; ctx.fill();
   }
 
-  // --- オーディオ (ティンパニロール & どんどんぱふぱふ) ---
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  function playSE(type) {
-    if(!document.getElementById('sound-toggle').checked) return;
-    if(audioCtx.state === 'suspended') audioCtx.resume();
-
-    const gain = audioCtx.createGain();
-    gain.connect(audioCtx.destination);
-    gain.gain.setValueAtTime(state.volume, audioCtx.currentTime);
-
-    if(type === 'roll') {
-      const osc = audioCtx.createOscillator();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(70, audioCtx.currentTime);
-      osc.connect(gain);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-    } else {
-      // ドンドンパフパフ再現
-      [523, 659, 783, 1046].forEach((f, i) => {
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        o.type = 'triangle';
-        o.connect(g); g.connect(audioCtx.destination);
-        o.frequency.setValueAtTime(f, audioCtx.currentTime + i * 0.1);
-        g.gain.setValueAtTime(state.volume, audioCtx.currentTime + i * 0.1);
-        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.5);
-        o.start(audioCtx.currentTime + i * 0.1); o.stop(audioCtx.currentTime + i * 0.1 + 0.6);
-      });
-    }
-  }
-
-  function handleSpin() {
-    if(state.spinning || state.tabs[state.activeIndex].items.length < 2) return;
-    state.spinning = true;
-    document.getElementById('start-guide').style.display = 'none';
-    document.getElementById('result-text').textContent = '';
+  function launchSpin() {
+    if(config.isRolling || config.tabs[config.currentTab].items.length < 2) return;
+    config.isRolling = true;
+    document.getElementById('result-display').textContent = "";
     
-    let speed = Math.random() * 0.5 + 0.5;
-    function frame() {
-      state.angle += speed;
-      speed *= 0.99;
-      playSE('roll');
-      if(speed < 0.003) {
-        state.spinning = false;
-        finalize();
+    let speed = Math.random() * 0.4 + 0.45;
+    const animate = () => {
+      config.angle += speed;
+      speed *= 0.988;
+      playBeep('roll');
+      if(speed < 0.0035) {
+        config.isRolling = false;
+        finishSelection();
         return;
       }
       drawWheel();
-      requestAnimationFrame(frame);
-    }
-    frame();
+      requestAnimationFrame(animate);
+    };
+    animate();
   }
 
-  function finalize() {
-    const items = state.tabs[state.activeIndex].items;
+  function finishSelection() {
+    const items = config.tabs[config.currentTab].items;
     const step = (Math.PI * 2) / items.length;
-    // 真上(1.5*PI)にあるインデックスを逆算
-    const pointer = (Math.PI * 1.5 - state.angle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    // 判定：真上(1.5 * PI)を基準にインデックスを計算
+    const pointer = (Math.PI * 1.5 - config.angle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
     const hit = Math.floor(pointer / step);
     
     drawWheel(hit);
     const winner = items[hit];
-    document.getElementById('result-text').textContent = winner;
-    playSE('win');
-    addHistory(winner);
-    triggerExplosion();
-    setTimeout(() => { document.getElementById('start-guide').style.display = 'block'; }, 1500);
+    document.getElementById('result-display').textContent = winner;
+    playBeep('win');
+    updateHistory(winner);
+    showFX();
   }
 
-  function addHistory(txt) {
-    state.history.unshift(txt);
-    if(state.history.length > 20) state.history.pop();
-    document.getElementById('history-list').innerHTML = state.history.map(h => `<li>${h}</li>`).join('');
+  function updateHistory(txt) {
+    config.history.unshift(txt);
+    document.getElementById('history-list').innerHTML = config.history.slice(0, 15).map(h => `<li>${h}</li>`).join('');
   }
 
-  function triggerExplosion() {
-    const particles = [];
-    for(let i=0; i<50; i++) {
-      particles.push({
-        x: effCanvas.width/2, y: 150, // 結果テキスト付近から
-        vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20,
-        s: Math.random()*15+5, c: pastelColors[Math.floor(Math.random()*pastelColors.length)],
-        t: Math.random() > 0.5 ? 'rect' : 'tri', l: 1.0
+  function playBeep(type) {
+    if(!document.getElementById('sound-chk').checked) return;
+    const vol = document.getElementById('vol-slider').value;
+    const g = audioCtx.createGain(); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(vol * 0.2, audioCtx.currentTime);
+
+    if(type === 'roll') {
+      const o = audioCtx.createOscillator(); o.type = 'sawtooth';
+      o.frequency.value = 85; o.connect(g);
+      o.start(); o.stop(audioCtx.currentTime + 0.05);
+    } else {
+      [523, 659, 783, 1046].forEach((f, i) => {
+        const o = audioCtx.createOscillator(); o.connect(g);
+        o.frequency.value = f; o.start(audioCtx.currentTime + i * 0.1);
+        o.stop(audioCtx.currentTime + i * 0.1 + 0.4);
       });
     }
-    function drawParticles() {
-      effCtx.clearRect(0,0,effCanvas.width,effCanvas.height);
-      let alive = false;
-      particles.forEach(p => {
-        if(p.l > 0) {
-          alive = true; p.x += p.vx; p.y += p.vy; p.vy += 0.4; p.l -= 0.015;
-          effCtx.globalAlpha = p.l; effCtx.fillStyle = p.c;
-          effCtx.beginPath();
-          if(p.t==='rect') effCtx.fillRect(p.x, p.y, p.s, p.s);
-          else { effCtx.moveTo(p.x,p.y); effCtx.lineTo(p.x+p.s,p.y+p.s); effCtx.lineTo(p.x-p.s,p.y+p.s); effCtx.fill(); }
-        }
-      });
-      if(alive) requestAnimationFrame(drawParticles);
-    }
-    drawParticles();
   }
 
-  function renderTabs() {
-    const list = document.getElementById('tab-list');
-    list.innerHTML = state.tabs.map((t, i) => `
-      <div class="tab-item ${i === state.activeIndex ? 'active' : ''}" onclick="selectTab(${i})">${t.name}</div>
-    `).join('') + (state.tabs.length < 5 ? `<div class="tab-item" style="color:#aaa" onclick="addTab()">+ 追加</div>` : '');
-  }
-  function selectTab(i) { state.activeIndex = i; renderTabs(); loadTab(); }
-  function addTab() { 
-    const n = prompt("名前は？", "ルーレット" + (state.tabs.length+1));
-    if(n){ state.tabs.push({name:n, items:[]}); state.activeIndex = state.tabs.length-1; renderTabs(); loadTab(); }
+  function switchTab(i) { config.currentTab = i; renderTabUI(); loadTabContent(); }
+  function addTab() {
+    const n = prompt("タブ名", "ルーレット" + (config.tabs.length+1));
+    if(n){ config.tabs.push({name:n, items:[]}); config.currentTab = config.tabs.length-1; renderTabUI(); loadTabContent(); }
   }
 
-  document.getElementById('input-box').addEventListener('input', (e) => {
-    state.tabs[state.activeIndex].items = e.target.value.split('\n').filter(v => v.trim() !== '');
+  document.getElementById('item-input').addEventListener('input', (e) => {
+    config.tabs[config.currentTab].items = e.target.value.split('\n').filter(v => v.trim() !== '');
     drawWheel();
   });
-  document.getElementById('vol-slider').addEventListener('input', (e) => state.volume = e.target.value);
 
-  function generateURL() {
-    const d = btoa(encodeURIComponent(JSON.stringify(state.tabs)));
+  function makeURL() {
+    const d = btoa(encodeURIComponent(JSON.stringify(config.tabs)));
     const url = window.location.origin + window.location.pathname + "?d=" + d;
-    document.getElementById('url-input').value = url;
+    document.getElementById('url-output').value = url;
     document.getElementById('url-box').style.display = 'block';
   }
-  function copyURL() { navigator.clipboard.writeText(document.getElementById('url-input').value); alert("コピー成功！"); }
+  function copyURL() { navigator.clipboard.writeText(document.getElementById('url-output').value); alert("コピーしたよ！"); }
 
-  function drawBG() {
-    const bg = document.getElementById('geo-canvas');
-    const bctx = bg.getContext('2d');
-    bg.width = window.innerWidth; bg.height = window.innerHeight;
-    for(let i=0; i<25; i++) {
-      bctx.fillStyle = pastelColors[i % pastelColors.length];
-      bctx.globalAlpha = 0.2;
-      bctx.beginPath();
-      if(i%2===0) bctx.fillRect(Math.random()*bg.width, Math.random()*bg.height, 40, 40);
-      else {
-        bctx.moveTo(Math.random()*bg.width, Math.random()*bg.height);
-        bctx.lineTo(Math.random()*bg.width, Math.random()*bg.height);
-        bctx.lineTo(Math.random()*bg.width, Math.random()*bg.height);
-        bctx.fill();
-      }
+  function showFX() {
+    const fx = document.getElementById('fx-canvas'); const fctx = fx.getContext('2d');
+    fx.width = fx.parentElement.clientWidth; fx.height = fx.parentElement.clientHeight;
+    let parts = []; for(let i=0; i<40; i++) parts.push({x:fx.width/2, y:200, vx:(Math.random()-0.5)*20, vy:(Math.random()-0.5)*20, c:colors[i%8], l:1.0});
+    const frame = () => {
+      fctx.clearRect(0,0,fx.width,fx.height); let alive = false;
+      parts.forEach(p => { if(p.l > 0){ alive=true; p.x+=p.vx; p.y+=p.vy; p.vy+=0.4; p.l-=0.02; fctx.globalAlpha=p.l; fctx.fillStyle=p.c; fctx.fillRect(p.x,p.y,12,12); }});
+      if(alive) requestAnimationFrame(frame);
+    }; frame();
+  }
+
+  function drawStaticBG() {
+    const c = document.getElementById('bg-layer'); const bctx = c.getContext('2d');
+    c.width = window.innerWidth; c.height = window.innerHeight;
+    for(let i=0; i<30; i++) {
+      bctx.fillStyle = colors[i%8]; bctx.globalAlpha = 0.15;
+      bctx.beginPath(); bctx.fillRect(Math.random()*c.width, Math.random()*c.height, 40, 40);
     }
   }
 
