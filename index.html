@@ -1,144 +1,232 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>ルレット</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ルレット</title>
 
-  <style>
-    body {
-      margin: 0;
-      background: #111;
-      color: #fff;
-      font-family: system-ui, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+<style>
+/* ======================
+   基本レイアウト
+====================== */
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#fff;
+  font-family:system-ui, -apple-system, sans-serif;
+  overflow:hidden;
+}
+.app{
+  max-width:1200px;
+  margin:0 auto;
+  padding:24px;
+  display:flex;
+  justify-content:center;
+}
 
-    #result {
-      height: 80px;
-      font-size: 28px;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+/* ======================
+   中央エリア
+====================== */
+.center{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+#result{
+  font-size:32px;
+  font-weight:800;
+  margin-bottom:8px;
+}
+canvas{
+  width:420px;
+  height:420px;
+  cursor:pointer;
+}
+#hitText{
+  font-size:44px;
+  font-weight:800;
+  margin-top:14px;
+  text-decoration:underline;
+}
 
-    #container {
-      position: relative;
-      margin-top: 40px;
-    }
+/* ======================
+   履歴
+====================== */
+.history{
+  position:fixed;
+  right:24px;
+  top:24px;
+  width:220px;
+  max-height:420px;
+  overflow:auto;
+  border:2px solid #ddd;
+  border-radius:16px;
+  padding:12px;
+}
+.history div{
+  font-size:20px;
+  margin-bottom:6px;
+}
 
-    #arrow {
-      position: absolute;
-      top: -30px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 32px;
-    }
-
-    #roulette {
-      width: 300px;
-      height: 300px;
-      border-radius: 50%;
-      border: 8px solid #fff;
-      background: conic-gradient(
-        #2ecc71 0deg 108deg,
-        #e74c3c 108deg 216deg,
-        #f1c40f 216deg 360deg
-      );
-      transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1);
-    }
-
-    button {
-      margin-top: 30px;
-      padding: 12px 28px;
-      font-size: 20px;
-      cursor: pointer;
-    }
-  </style>
+/* ======================
+   演出（SAFE寄り）
+====================== */
+.shake{animation:shake .3s infinite}
+@keyframes shake{
+  0%{transform:translate(0,0)}
+  25%{transform:translate(2px,1px)}
+  50%{transform:translate(-2px,-1px)}
+  75%{transform:translate(1px,-2px)}
+}
+.invert{filter:invert(1)}
+.flash{
+  position:fixed;
+  inset:0;
+  background:#fff;
+  animation:flash .2s forwards;
+}
+@keyframes flash{to{opacity:0}}
+.fade{opacity:.2}
+</style>
 </head>
 
 <body>
-  <!-- 結果表示（上） -->
-  <div id="result">START</div>
-
-  <!-- ルーレット -->
-  <div id="container">
-    <div id="arrow">▼</div>
-    <div id="roulette"></div>
+<div class="app" id="app">
+  <div class="center">
+    <div id="result">▼ 抽選結果 ▼</div>
+    <canvas id="wheel" width="420" height="420"></canvas>
+    <div id="hitText">—</div>
   </div>
+</div>
 
-  <button onclick="spin()">回す</button>
+<div class="history" id="history"></div>
 
-  <!-- 効果音 -->
-  <audio id="se-spin" src="https://soundeffect-lab.info/sound/anime/mp3/timpani-roll1.mp3"></audio>
-  <audio id="se-hit" src="https://soundeffect-lab.info/sound/anime/mp3/pafu_pafu1.mp3"></audio>
+<!-- 効果音（固定） -->
+<audio id="timpani" src="https://soundeffect-lab.info/sound/battle/mp3/timpani-roll.mp3" loop></audio>
+<audio id="pafu" src="https://soundeffect-lab.info/sound/various/mp3/dondonpafupafu.mp3"></audio>
 
-  <script>
-    const roulette = document.getElementById("roulette");
-    const result = document.getElementById("result");
-    const seSpin = document.getElementById("se-spin");
-    const seHit = document.getElementById("se-hit");
+<script>
+/* ======================
+   変数
+====================== */
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const hitText = document.getElementById("hitText");
+const history = document.getElementById("history");
+const timpani = document.getElementById("timpani");
+const pafu = document.getElementById("pafu");
 
-    let spinning = false;
-    let currentRotation = 0;
+const colors = ["#cceeff","#ffd6e7","#c9f2d8","#fff0c9","#e7d8c9"];
+let items = ["A","B","C"];
+let angle = 0;
+let spinning = false;
 
-    function spin() {
-      if (spinning) return;
-      spinning = true;
+/* ======================
+   描画
+====================== */
+function draw(hitIndex=null){
+  ctx.clearRect(0,0,420,420);
+  const r=210,cx=210,cy=210;
+  const step=(Math.PI*2)/items.length;
 
-      result.textContent = "回転中…";
+  items.forEach((t,i)=>{
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,angle+i*step,angle+(i+1)*step);
+    ctx.fillStyle = (i===hitIndex) ? "#ff9aa2" : colors[i%colors.length];
+    ctx.fill();
+    ctx.strokeStyle="#fff";
+    ctx.stroke();
 
-      seSpin.currentTime = 0;
-      seSpin.loop = true;
-      seSpin.play();
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(angle+i*step+step/2);
+    ctx.textAlign="right";
+    ctx.fillStyle="#333";
+    ctx.font="16px sans-serif";
+    ctx.fillText(t,r-10,5);
+    ctx.restore();
+  });
 
-      // 判定（SAFE 30%）
-      const rand = Math.random();
-      let outcome;
-      if (rand < 0.3) {
-        outcome = "SAFE";
-      } else if (rand < 0.65) {
-        outcome = "EVENT A";
-      } else {
-        outcome = "EVENT B";
-      }
+  /* ▼ 上判定 */
+  ctx.fillStyle="#000";
+  ctx.beginPath();
+  ctx.moveTo(cx-12,cy-r-8);
+  ctx.lineTo(cx+12,cy-r-8);
+  ctx.lineTo(cx,cy-r-28);
+  ctx.fill();
+}
 
-      // 回転角度
-      const baseSpin = 360 * 5;
-      let offset;
-      if (outcome === "SAFE") offset = 30;
-      else if (outcome === "EVENT A") offset = 150;
-      else offset = 270;
+/* ======================
+   当たり判定
+====================== */
+function getHit(){
+  const step=(Math.PI*2)/items.length;
+  const pointer=(Math.PI*1.5-angle+Math.PI*2)%(Math.PI*2);
+  return Math.floor(pointer/step);
+}
 
-      currentRotation += baseSpin + offset;
-      roulette.style.transform = `rotate(${currentRotation}deg)`;
+/* ======================
+   SAFE演出（30%）
+====================== */
+function safeEffect(){
+  const app=document.getElementById("app");
+  const r=Math.random();
+  if(r<0.33) app.classList.add("shake");
+  else if(r<0.66) document.body.classList.add("invert");
+  else document.body.insertAdjacentHTML("beforeend","<div class='flash'></div>");
 
-      setTimeout(() => {
-        seSpin.pause();
-        seSpin.currentTime = 0;
+  setTimeout(()=>{
+    app.className="app";
+    document.body.className="";
+  },5000);
+}
 
-        seHit.currentTime = 0;
-        seHit.loop = true;
-        seHit.play();
+/* ======================
+   回転
+====================== */
+function spin(){
+  if(spinning) return;
+  spinning=true;
 
-        result.textContent = outcome;
+  timpani.currentTime=0;
+  timpani.play();
+  hitText.textContent="抽選中…";
 
-        // 5秒後に全部リセット
-        setTimeout(() => {
-          seHit.pause();
-          seHit.currentTime = 0;
+  let speed=Math.random()*0.4+0.3;
 
-          roulette.style.transform = "rotate(0deg)";
-          currentRotation = 0;
-          result.textContent = "START";
-          spinning = false;
-        }, 5000);
+  function loop(){
+    angle+=speed;
+    speed*=0.985;
+    draw();
 
-      }, 4000);
+    if(speed<0.002){
+      spinning=false;
+      timpani.pause();
+
+      const hit=getHit();
+      draw(hit);
+
+      hitText.textContent=items[hit];
+      pafu.currentTime=0;
+      pafu.play();
+
+      const d=document.createElement("div");
+      d.textContent=items[hit];
+      history.prepend(d);
+      while(history.children.length>15)
+        history.removeChild(history.lastChild);
+
+      if(Math.random()<0.3) safeEffect();
+      return;
     }
-  </script>
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+canvas.addEventListener("click",spin);
+draw();
+</script>
 </body>
 </html>
