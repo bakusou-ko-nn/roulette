@@ -2,154 +2,202 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ルレット</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-/* ======================
-   基本レイアウト
-====================== */
+/* ===== 全体 ===== */
 *{box-sizing:border-box}
 body{
   margin:0;
   background:#fff;
-  font-family:system-ui, -apple-system, sans-serif;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   overflow:hidden;
 }
 .app{
-  max-width:1200px;
+  max-width:1400px;
   margin:0 auto;
-  padding:24px;
-  display:flex;
-  justify-content:center;
+  padding:32px;
+  display:grid;
+  grid-template-columns:220px 1fr 260px;
+  gap:32px;
 }
 
-/* ======================
-   中央エリア
-====================== */
+/* ===== 左 ===== */
+.left{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.tab{
+  border:1px solid #1f6f4a;
+  padding:10px;
+  cursor:pointer;
+}
+.tab.active{
+  background:#c9f2d8;
+  border-radius:12px;
+}
+button{
+  padding:10px;
+  cursor:pointer;
+}
+
+/* ===== 中央 ===== */
 .center{
   display:flex;
   flex-direction:column;
   align-items:center;
+  gap:12px;
 }
 #result{
-  font-size:32px;
+  font-size:28px;
   font-weight:800;
-  margin-bottom:8px;
 }
 canvas{
   width:420px;
   height:420px;
   cursor:pointer;
 }
-#hitText{
-  font-size:44px;
-  font-weight:800;
-  margin-top:14px;
+#hit{
+  font-size:40px;
+  font-weight:900;
   text-decoration:underline;
 }
+textarea{
+  width:420px;
+  height:120px;
+  margin-top:12px;
+}
 
-/* ======================
-   履歴
-====================== */
+/* ===== 履歴 ===== */
 .history{
-  position:fixed;
-  right:24px;
-  top:24px;
-  width:220px;
-  max-height:420px;
-  overflow:auto;
-  border:2px solid #ddd;
+  border:2px solid red;
   border-radius:16px;
   padding:12px;
-}
-.history div{
-  font-size:20px;
-  margin-bottom:6px;
+  height:420px;
+  overflow:auto;
 }
 
-/* ======================
-   演出（SAFE寄り）
-====================== */
-.shake{animation:shake .3s infinite}
+/* ===== 背景 ===== */
+.bg{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+}
+.bg span{
+  position:absolute;
+  opacity:.15;
+  animation:fall 12s linear infinite;
+}
+@keyframes fall{
+  from{transform:translateY(-50px)}
+  to{transform:translateY(110vh)}
+}
+
+/* ===== 演出 ===== */
+.shake{animation:shake .2s infinite}
 @keyframes shake{
-  0%{transform:translate(0,0)}
+  0%{transform:translate(0)}
   25%{transform:translate(2px,1px)}
   50%{transform:translate(-2px,-1px)}
   75%{transform:translate(1px,-2px)}
 }
 .invert{filter:invert(1)}
 .flash{
-  position:fixed;
-  inset:0;
+  position:fixed;inset:0;
   background:#fff;
-  animation:flash .2s forwards;
+  animation:flash .3s forwards;
 }
 @keyframes flash{to{opacity:0}}
-.fade{opacity:.2}
+.transparent{opacity:.2}
+.pixel{filter:blur(2px)}
 </style>
 </head>
 
 <body>
+
+<div class="bg" id="bg"></div>
+
 <div class="app" id="app">
+  <div class="left">
+    <div class="tab active">ルーレット</div>
+    <button id="gen">URL発行</button>
+    <button id="reset">リセット</button>
+  </div>
+
   <div class="center">
     <div id="result">▼ 抽選結果 ▼</div>
     <canvas id="wheel" width="420" height="420"></canvas>
-    <div id="hitText">—</div>
+    <div id="hit">—</div>
+    <textarea id="input">A
+B
+C</textarea>
   </div>
+
+  <div class="history" id="history"></div>
 </div>
 
-<div class="history" id="history"></div>
-
-<!-- 効果音（固定） -->
-<audio id="timpani" src="https://soundeffect-lab.info/sound/battle/mp3/timpani-roll.mp3" loop></audio>
-<audio id="pafu" src="https://soundeffect-lab.info/sound/various/mp3/dondonpafupafu.mp3"></audio>
+<audio id="spinSE" src="https://soundeffect-lab.info/sound/battle/mp3/timpani-roll.mp3" loop></audio>
+<audio id="hitSE" src="https://soundeffect-lab.info/sound/various/mp3/trumpet1.mp3"></audio>
 
 <script>
-/* ======================
-   変数
-====================== */
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
-const hitText = document.getElementById("hitText");
-const history = document.getElementById("history");
-const timpani = document.getElementById("timpani");
-const pafu = document.getElementById("pafu");
+/* ===== 背景 ===== */
+const bg=document.getElementById('bg');
+for(let i=0;i<25;i++){
+  const s=document.createElement('span');
+  s.style.left=Math.random()*100+'%';
+  s.style.width=s.style.height=(20+Math.random()*40)+'px';
+  s.style.background=['#fdd','#dfd','#ddf'][i%3];
+  s.style.animationDelay=Math.random()*10+'s';
+  bg.appendChild(s);
+}
 
-const colors = ["#cceeff","#ffd6e7","#c9f2d8","#fff0c9","#e7d8c9"];
-let items = ["A","B","C"];
-let angle = 0;
-let spinning = false;
+/* ===== ルーレット ===== */
+const canvas=document.getElementById('wheel');
+const ctx=canvas.getContext('2d');
+const hit=document.getElementById('hit');
+const history=document.getElementById('history');
+const spinSE=document.getElementById('spinSE');
+const hitSE=document.getElementById('hitSE');
 
-/* ======================
-   描画
-====================== */
+let items=[];
+let angle=0;
+let spinning=false;
+
+function parse(){
+  items=document.getElementById('input').value
+    .split('\n').map(v=>v.trim()).filter(Boolean).slice(0,500);
+}
+parse();
+
+document.getElementById('input').oninput=parse;
+
+const colors=['#f8caca','#fff0b3','#ffd9b3','#cceeff','#e0ccff','#ccf2d8','#eee'];
+
 function draw(hitIndex=null){
   ctx.clearRect(0,0,420,420);
   const r=210,cx=210,cy=210;
-  const step=(Math.PI*2)/items.length;
-
+  const step=Math.PI*2/items.length;
   items.forEach((t,i)=>{
     ctx.beginPath();
     ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,r,angle+i*step,angle+(i+1)*step);
-    ctx.fillStyle = (i===hitIndex) ? "#ff9aa2" : colors[i%colors.length];
+    ctx.fillStyle=i===hitIndex?'#ff9aa2':colors[i%colors.length];
     ctx.fill();
-    ctx.strokeStyle="#fff";
+    ctx.strokeStyle='#fff';
     ctx.stroke();
-
     ctx.save();
     ctx.translate(cx,cy);
     ctx.rotate(angle+i*step+step/2);
-    ctx.textAlign="right";
-    ctx.fillStyle="#333";
-    ctx.font="16px sans-serif";
+    ctx.textAlign='right';
+    ctx.fillStyle='#333';
+    ctx.font='16px sans-serif';
     ctx.fillText(t,r-10,5);
     ctx.restore();
   });
-
-  /* ▼ 上判定 */
-  ctx.fillStyle="#000";
+  ctx.fillStyle='#000';
   ctx.beginPath();
   ctx.moveTo(cx-12,cy-r-8);
   ctx.lineTo(cx+12,cy-r-8);
@@ -157,67 +205,46 @@ function draw(hitIndex=null){
   ctx.fill();
 }
 
-/* ======================
-   当たり判定
-====================== */
 function getHit(){
-  const step=(Math.PI*2)/items.length;
-  const pointer=(Math.PI*1.5-angle+Math.PI*2)%(Math.PI*2);
-  return Math.floor(pointer/step);
+  const step=Math.PI*2/items.length;
+  const p=(Math.PI*1.5-angle+Math.PI*2)%(Math.PI*2);
+  return Math.floor(p/step);
 }
 
-/* ======================
-   SAFE演出（30%）
-====================== */
-function safeEffect(){
-  const app=document.getElementById("app");
-  const r=Math.random();
-  if(r<0.33) app.classList.add("shake");
-  else if(r<0.66) document.body.classList.add("invert");
-  else document.body.insertAdjacentHTML("beforeend","<div class='flash'></div>");
-
+/* ===== カオス ===== */
+function chaos(){
+  if(Math.random()>0.2)return;
+  document.body.classList.add('shake','invert','pixel');
+  document.body.insertAdjacentHTML('beforeend','<div class="flash"></div>');
   setTimeout(()=>{
-    app.className="app";
-    document.body.className="";
+    document.body.className='';
   },5000);
 }
 
-/* ======================
-   回転
-====================== */
+/* ===== 回転 ===== */
 function spin(){
-  if(spinning) return;
+  if(spinning||items.length===0)return;
   spinning=true;
-
-  timpani.currentTime=0;
-  timpani.play();
-  hitText.textContent="抽選中…";
+  spinSE.currentTime=0; spinSE.play();
+  hit.textContent='抽選中…';
 
   let speed=Math.random()*0.4+0.3;
-
   function loop(){
     angle+=speed;
     speed*=0.985;
     draw();
-
     if(speed<0.002){
       spinning=false;
-      timpani.pause();
-
-      const hit=getHit();
-      draw(hit);
-
-      hitText.textContent=items[hit];
-      pafu.currentTime=0;
-      pafu.play();
-
-      const d=document.createElement("div");
-      d.textContent=items[hit];
+      spinSE.pause();
+      const h=getHit();
+      draw(h);
+      hit.textContent=items[h];
+      hitSE.play();
+      const d=document.createElement('div');
+      d.textContent=items[h];
       history.prepend(d);
-      while(history.children.length>15)
-        history.removeChild(history.lastChild);
-
-      if(Math.random()<0.3) safeEffect();
+      while(history.children.length>10)history.removeChild(history.lastChild);
+      chaos();
       return;
     }
     requestAnimationFrame(loop);
@@ -225,8 +252,9 @@ function spin(){
   loop();
 }
 
-canvas.addEventListener("click",spin);
+canvas.onclick=spin;
 draw();
 </script>
+
 </body>
 </html>
