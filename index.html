@@ -1,260 +1,901 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>ルレット</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>運命のルーレット</title>
+    <style>
+        /* --- デザイン変数 (パステル&ゆったり) --- */
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #444;
+            /* 原色30%程度のパステルカラー */
+            --p-red: #ffb3ba;
+            --p-yellow: #ffffba;
+            --p-orange: #ffdfba;
+            --p-blue: #bae1ff;
+            --p-purple: #e2baff;
+            --p-green: #baffc9;
+            --p-gray: #e0e0e0;
+            
+            --mint-active: #98ff98;
+            --border-deep: #555;
+            --border-light: #ccc;
+        }
 
-<style>
-/* ===== 全体 ===== */
-*{box-sizing:border-box}
-body{
-  margin:0;
-  background:#fff;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  overflow:hidden;
-}
-.app{
-  max-width:1400px;
-  margin:0 auto;
-  padding:32px;
-  display:grid;
-  grid-template-columns:220px 1fr 260px;
-  gap:32px;
-}
+        * { box-sizing: border-box; }
 
-/* ===== 左 ===== */
-.left{
-  display:flex;
-  flex-direction:column;
-  gap:16px;
-}
-.tab{
-  border:1px solid #1f6f4a;
-  padding:10px;
-  cursor:pointer;
-}
-.tab.active{
-  background:#c9f2d8;
-  border-radius:12px;
-}
-button{
-  padding:10px;
-  cursor:pointer;
-}
+        body {
+            font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 1s ease;
+        }
 
-/* ===== 中央 ===== */
-.center{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:12px;
-}
-#result{
-  font-size:28px;
-  font-weight:800;
-}
-canvas{
-  width:420px;
-  height:420px;
-  cursor:pointer;
-}
-#hit{
-  font-size:40px;
-  font-weight:900;
-  text-decoration:underline;
-}
-textarea{
-  width:420px;
-  height:120px;
-  margin-top:12px;
-}
+        /* 背景アニメーション用 */
+        #bgCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
 
-/* ===== 履歴 ===== */
-.history{
-  border:2px solid red;
-  border-radius:16px;
-  padding:12px;
-  height:420px;
-  overflow:auto;
-}
+        /* メインレイアウト (3カラム) */
+        .container {
+            display: grid;
+            grid-template-columns: 260px 1fr 260px;
+            gap: 40px;
+            width: 95%;
+            max-width: 1600px;
+            height: 90vh;
+            position: relative;
+            z-index: 1;
+        }
 
-/* ===== 背景 ===== */
-.bg{
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  z-index:-1;
-}
-.bg span{
-  position:absolute;
-  opacity:.15;
-  animation:fall 12s linear infinite;
-}
-@keyframes fall{
-  from{transform:translateY(-50px)}
-  to{transform:translateY(110vh)}
-}
+        /* --- 左サイド (操作系) --- */
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            justify-content: center;
+        }
 
-/* ===== 演出 ===== */
-.shake{animation:shake .2s infinite}
-@keyframes shake{
-  0%{transform:translate(0)}
-  25%{transform:translate(2px,1px)}
-  50%{transform:translate(-2px,-1px)}
-  75%{transform:translate(1px,-2px)}
-}
-.invert{filter:invert(1)}
-.flash{
-  position:fixed;inset:0;
-  background:#fff;
-  animation:flash .3s forwards;
-}
-@keyframes flash{to{opacity:0}}
-.transparent{opacity:.2}
-.pixel{filter:blur(2px)}
-</style>
+        /* 音量エリア */
+        .audio-control {
+            border: 1px solid var(--border-light);
+            padding: 15px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .volume-game-box {
+            position: relative;
+            height: 80px;
+            border-bottom: 4px solid #666;
+            margin-bottom: 10px;
+            overflow: hidden;
+            background: #fafafa;
+            border-radius: 4px;
+        }
+        #volBall {
+            width: 18px; height: 18px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            position: absolute;
+            top: 0; left: 50%;
+            display: none;
+        }
+        .vol-scale {
+            height: 6px;
+            width: 100%;
+            background: linear-gradient(to right, #bae1ff, #ffb3ba);
+            border-radius: 3px;
+        }
+        .audio-btns {
+            display: flex; gap: 5px; justify-content: center; margin-top: 8px;
+        }
+
+        /* タブエリア */
+        .tabs {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .tab-item {
+            padding: 12px 15px;
+            border: 1px solid #2e8b57; /* 深緑 */
+            background: white;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .tab-item.active {
+            background-color: var(--mint-active);
+            border-radius: 15px;
+            border-color: var(--mint-active);
+            font-weight: bold;
+        }
+        .tab-edit {
+            font-size: 11px;
+            color: #666;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* URL・リセット */
+        .system-btns {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.1s;
+            font-weight: bold;
+        }
+        button:active { transform: scale(0.98); }
+        .btn-url { background: var(--p-blue); color: #444; }
+        .btn-reset { background: var(--p-red); color: #444; }
+        .btn-undo { background: var(--p-yellow); color: #444; font-size: 12px; }
+
+        /* --- 中央 (ルーレット) --- */
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .result-box {
+            font-size: 36px;
+            font-weight: bold;
+            height: 50px;
+            color: #333;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0 #fff;
+            z-index: 10;
+        }
+
+        .roulette-container {
+            position: relative;
+            margin-bottom: 20px;
+            transition: transform 0.5s; /* カオス演出用 */
+        }
+        .needle {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 40px;
+            color: #333;
+            z-index: 5;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        canvas#rouletteCanvas {
+            border-radius: 50%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            background: white;
+        }
+
+        #spinBtn {
+            width: 220px;
+            height: 60px;
+            font-size: 24px;
+            background: var(--p-green);
+            color: #333;
+            box-shadow: 0 4px 0 #88cc88;
+            margin-bottom: 15px;
+        }
+        #spinBtn:active { box-shadow: 0 0 0; transform: translateY(4px); }
+
+        textarea#inputs {
+            width: 100%;
+            height: 120px;
+            padding: 15px;
+            border: 2px solid var(--p-gray);
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            outline: none;
+        }
+
+        /* --- 右サイド (履歴) --- */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .history-card {
+            border: 2px solid #ff6b6b;
+            border-radius: 20px;
+            padding: 20px;
+            height: 70%;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .history-head {
+            text-align: center;
+            color: #ff6b6b;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 15px;
+            border-bottom: 2px dashed #ffb3ba;
+            padding-bottom: 5px;
+        }
+        .history-list {
+            list-style: none;
+            padding: 0; margin: 0;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .history-list li {
+            padding: 10px 5px;
+            border-bottom: 1px solid #eee;
+            font-size: 15px;
+            color: #555;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* --- カオス演出用クラス --- */
+        .chaos-dark { filter: invert(1) hue-rotate(180deg); background: #000 !important; }
+        .chaos-pixel { image-rendering: pixelated; transform: scale(0.05) rotate(720deg); transition: 3s ease-in; }
+        .chaos-fall { transform: translateY(120vh) rotate(15deg); transition: transform 1.5s cubic-bezier(0.5, 0, 1, 1); }
+        .chaos-invisible { opacity: 0.05; }
+        .chaos-giant { transform: scale(1.5); }
+        
+        /* 嘘広告 */
+        #fakeAd {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 320px; height: 250px; background: #fff; border: 4px solid red;
+            z-index: 9999; display: none; flex-direction: column;
+            justify-content: center; align-items: center;
+            box-shadow: 10px 10px 20px rgba(0,0,0,0.5);
+            font-weight: bold; font-size: 20px; color: red;
+        }
+        #fakeAd span { font-size: 12px; position: absolute; top: 0; right: 0; padding: 5px; cursor: pointer; background: #eee; border: 1px solid #333;}
+        
+        /* モーダル地獄 */
+        #modalHell {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 10000;
+            display: none; justify-content: center; align-items: center;
+        }
+        .modal-content { background: white; padding: 30px; border-radius: 10px; text-align: center; }
+
+    </style>
 </head>
-
 <body>
 
-<div class="bg" id="bg"></div>
+    <canvas id="bgCanvas"></canvas>
 
-<div class="app" id="app">
-  <div class="left">
-    <div class="tab active">ルーレット</div>
-    <button id="gen">URL発行</button>
-    <button id="reset">リセット</button>
-  </div>
+    <div class="container" id="mainApp">
+        <div class="left-panel">
+            <div class="audio-control">
+                <div class="volume-game-box" id="volBox">
+                    <div id="volBall"></div>
+                </div>
+                <div class="vol-scale"></div>
+                <div class="audio-btns">
+                    <button onclick="dropVolume()" style="background:#eee;">🔊 音量抽選</button>
+                    <button onclick="toggleMute()" style="background:#eee;">🔇 MUTE</button>
+                </div>
+            </div>
 
-  <div class="center">
-    <div id="result">▼ 抽選結果 ▼</div>
-    <canvas id="wheel" width="420" height="420"></canvas>
-    <div id="hit">—</div>
-    <textarea id="input">A
-B
-C</textarea>
-  </div>
+            <div class="tabs" id="tabList">
+                </div>
 
-  <div class="history" id="history"></div>
-</div>
+            <div class="system-btns">
+                <button class="btn-url" onclick="genUrl()">🔗 URL発行 & コピー</button>
+                <button class="btn-reset" onclick="resetAll()">⚠️ 強制リセット</button>
+                <button class="btn-undo" onclick="undo()">↩️ Undo</button>
+            </div>
+        </div>
 
-<audio id="spinSE" src="https://soundeffect-lab.info/sound/battle/mp3/timpani-roll.mp3" loop></audio>
-<audio id="hitSE" src="https://soundeffect-lab.info/sound/various/mp3/trumpet1.mp3"></audio>
+        <div class="center-panel">
+            <div class="result-box" id="resultText">READY</div>
+            
+            <div class="roulette-container" id="rContainer">
+                <div class="needle" id="needle">▼</div>
+                <canvas id="rouletteCanvas" width="500" height="500"></canvas>
+            </div>
+
+            <button id="spinBtn" onclick="startSpin()">START</button>
+            <textarea id="inputs" placeholder="項目を入力してください&#13;&#10;改行で区切られます&#13;&#10;(最大500単語)"></textarea>
+        </div>
+
+        <div class="right-panel">
+            <div class="history-card">
+                <div class="history-head">HISTORY (Latest 10)</div>
+                <ul class="history-list" id="historyUl"></ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="fakeAd">
+        <span onclick="this.parentElement.style.display='none'">×</span>
+        <p>🚨 当選確率 99% UP!? 🚨</p>
+        <p style="font-size: 14px; color: black;">今すぐクリックして登録！</p>
+        <button style="margin-top:20px; background:red; color:white;">詳細を見る</button>
+    </div>
+
+    <div id="modalHell">
+        <div class="modal-content">
+            <p id="modalMsg">本当に回しますか？</p>
+            <button onclick="nextModal()">はい</button>
+        </div>
+    </div>
 
 <script>
-/* ===== 背景 ===== */
-const bg=document.getElementById('bg');
-for(let i=0;i<25;i++){
-  const s=document.createElement('span');
-  s.style.left=Math.random()*100+'%';
-  s.style.width=s.style.height=(20+Math.random()*40)+'px';
-  s.style.background=['#fdd','#dfd','#ddf'][i%3];
-  s.style.animationDelay=Math.random()*10+'s';
-  bg.appendChild(s);
+/**
+ * ==========================================
+ * CORE LOGIC & CONFIG
+ * ==========================================
+ */
+const COLORS = ['#ffb3ba', '#ffffba', '#ffdfba', '#bae1ff', '#e2baff', '#baffc9', '#e0e0e0'];
+const MAX_ITEMS = 500;
+
+// State
+let items = ["ラーメン", "カレー", "うどん", "パスタ"];
+let tabs = [
+    { name: "ランチ", content: "ラーメン\nカレー\nうどん\nパスタ" },
+    { name: "未設定", content: "" },
+    { name: "未設定", content: "" },
+    { name: "未設定", content: "" },
+    { name: "未設定", content: "" }
+];
+let currentTab = 0;
+let historyLog = [];
+let prevContent = ""; // Undo用
+let globalVol = 0.5;
+let isMuted = false;
+let isSpinning = false;
+
+// Audio
+let bgmSource = null; // Tympani loop
+
+// Chaos
+let chaosActive = false;
+let chaosType = null;
+let clickSpamCount = 0;
+
+window.onload = () => {
+    loadHash();
+    renderTabs();
+    updateInputFromTab();
+    drawBackground();
+    animBackground();
+
+    // Input Listener
+    document.getElementById('inputs').addEventListener('input', (e) => {
+        tabs[currentTab].content = e.target.value;
+        parseItems();
+        drawRoulette();
+    });
+};
+
+/**
+ * ==========================================
+ * ROULETTE DRAWING
+ * ==========================================
+ */
+function parseItems() {
+    const raw = tabs[currentTab].content;
+    items = raw.split('\n').filter(x => x.trim() !== "").slice(0, MAX_ITEMS);
 }
 
-/* ===== ルーレット ===== */
-const canvas=document.getElementById('wheel');
-const ctx=canvas.getContext('2d');
-const hit=document.getElementById('hit');
-const history=document.getElementById('history');
-const spinSE=document.getElementById('spinSE');
-const hitSE=document.getElementById('hitSE');
+function drawRoulette(rotationOffset = 0) {
+    const cvs = document.getElementById('rouletteCanvas');
+    const ctx = cvs.getContext('2d');
+    const r = cvs.width / 2;
+    const total = items.length;
 
-let items=[];
-let angle=0;
-let spinning=false;
+    ctx.clearRect(0,0,cvs.width,cvs.height);
 
-function parse(){
-  items=document.getElementById('input').value
-    .split('\n').map(v=>v.trim()).filter(Boolean).slice(0,500);
-}
-parse();
-
-document.getElementById('input').oninput=parse;
-
-const colors=['#f8caca','#fff0b3','#ffd9b3','#cceeff','#e0ccff','#ccf2d8','#eee'];
-
-function draw(hitIndex=null){
-  ctx.clearRect(0,0,420,420);
-  const r=210,cx=210,cy=210;
-  const step=Math.PI*2/items.length;
-  items.forEach((t,i)=>{
+    // Outer Circle
     ctx.beginPath();
-    ctx.moveTo(cx,cy);
-    ctx.arc(cx,cy,r,angle+i*step,angle+(i+1)*step);
-    ctx.fillStyle=i===hitIndex?'#ff9aa2':colors[i%colors.length];
+    ctx.arc(r, r, r - 5, 0, Math.PI*2);
+    ctx.fillStyle = "#fff";
     ctx.fill();
-    ctx.strokeStyle='#fff';
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = "#aaa";
     ctx.stroke();
-    ctx.save();
-    ctx.translate(cx,cy);
-    ctx.rotate(angle+i*step+step/2);
-    ctx.textAlign='right';
-    ctx.fillStyle='#333';
-    ctx.font='16px sans-serif';
-    ctx.fillText(t,r-10,5);
-    ctx.restore();
-  });
-  ctx.fillStyle='#000';
-  ctx.beginPath();
-  ctx.moveTo(cx-12,cy-r-8);
-  ctx.lineTo(cx+12,cy-r-8);
-  ctx.lineTo(cx,cy-r-28);
-  ctx.fill();
-}
 
-function getHit(){
-  const step=Math.PI*2/items.length;
-  const p=(Math.PI*1.5-angle+Math.PI*2)%(Math.PI*2);
-  return Math.floor(p/step);
-}
+    if (total === 0) return;
 
-/* ===== カオス ===== */
-function chaos(){
-  if(Math.random()>0.2)return;
-  document.body.classList.add('shake','invert','pixel');
-  document.body.insertAdjacentHTML('beforeend','<div class="flash"></div>');
-  setTimeout(()=>{
-    document.body.className='';
-  },5000);
-}
+    const arc = (Math.PI * 2) / total;
 
-/* ===== 回転 ===== */
-function spin(){
-  if(spinning||items.length===0)return;
-  spinning=true;
-  spinSE.currentTime=0; spinSE.play();
-  hit.textContent='抽選中…';
+    for(let i=0; i<total; i++) {
+        const angle = rotationOffset + (i * arc);
+        ctx.beginPath();
+        ctx.moveTo(r, r);
+        ctx.arc(r, r, r - 10, angle, angle + arc);
+        ctx.fillStyle = COLORS[i % COLORS.length];
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#fff";
+        ctx.stroke();
 
-  let speed=Math.random()*0.4+0.3;
-  function loop(){
-    angle+=speed;
-    speed*=0.985;
-    draw();
-    if(speed<0.002){
-      spinning=false;
-      spinSE.pause();
-      const h=getHit();
-      draw(h);
-      hit.textContent=items[h];
-      hitSE.play();
-      const d=document.createElement('div');
-      d.textContent=items[h];
-      history.prepend(d);
-      while(history.children.length>10)history.removeChild(history.lastChild);
-      chaos();
-      return;
+        // Text
+        ctx.save();
+        ctx.translate(r, r);
+        ctx.rotate(angle + arc/2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#444";
+        ctx.font = "bold 20px sans-serif";
+        const text = items[i];
+        // 長い文字は省略
+        const dispText = text.length > 10 ? text.substring(0,9)+".." : text;
+        ctx.fillText(dispText, r - 30, 6);
+        ctx.restore();
     }
-    requestAnimationFrame(loop);
-  }
-  loop();
 }
 
-canvas.onclick=spin;
-draw();
-</script>
+/**
+ * ==========================================
+ * SPIN LOGIC & CHAOS
+ * ==========================================
+ */
+async function startSpin() {
+    if (isSpinning) return;
+    if (items.length === 0) { alert("項目を入力してください！"); return; }
 
+    // State Save for Undo
+    prevContent = tabs[currentTab].content;
+
+    // Chaos Determination (20%)
+    chaosActive = Math.random() < 0.2;
+    chaosType = chaosActive ? pickChaos() : null;
+
+    // Reset Chaos Styles
+    resetChaosStyles();
+
+    // Pre-Spin Harassment
+    if (chaosType === 'spam') {
+        if (!handleSpamClick()) return;
+    }
+    if (chaosType === 'modal') {
+        await handleModalHell();
+    }
+    if (chaosType === 'fakeAd') {
+        document.getElementById('fakeAd').style.display = 'flex';
+    }
+
+    isSpinning = true;
+    
+    // Play Start Sound
+    playSound('roll');
+
+    // Spin Animation
+    if (chaosType === 'reverse') {
+        spinReverse();
+    } else if (chaosType === 'gravity') {
+        spinNormal(() => {
+            // Drop after stop
+            document.getElementById('rContainer').classList.add('chaos-fall');
+        });
+    } else if (chaosType === 'stop_fake') {
+        spinFake();
+    } else {
+        spinNormal();
+    }
+}
+
+function spinNormal(onStopCallback = null) {
+    let speed = 50;
+    let angle = 0;
+    let friction = 0.985;
+    
+    // Chaos: Invisible
+    if (chaosType === 'invisible') {
+        document.getElementById('rouletteCanvas').classList.add('chaos-invisible');
+    }
+
+    const loop = () => {
+        speed *= friction;
+        angle += speed * Math.PI / 180;
+        drawRoulette(angle);
+
+        if (speed < 0.1) {
+            finishSpin(angle);
+            if(onStopCallback) onStopCallback();
+        } else {
+            requestAnimationFrame(loop);
+        }
+    };
+    loop();
+}
+
+function spinReverse() {
+    let speed = 50;
+    let angle = 0;
+    let reversed = false;
+    
+    const loop = () => {
+        if (!reversed) {
+            speed *= 0.98;
+            angle += speed * Math.PI/180;
+            if (speed < 5) { reversed = true; speed = 60; /* 逆噴射 */ }
+        } else {
+            speed *= 0.98;
+            angle -= speed * Math.PI/180; // Reverse
+        }
+        drawRoulette(angle);
+
+        if (reversed && speed < 0.1) {
+            finishSpin(angle);
+        } else {
+            requestAnimationFrame(loop);
+        }
+    };
+    loop();
+}
+
+function spinFake() {
+    // 止まると見せかけて...
+    let speed = 50;
+    let angle = 0;
+    let faked = false;
+
+    const loop = () => {
+        if (!faked && speed < 0.5) {
+            faked = true;
+            speed = 40; // 再加速
+            // ファンファーレだけ鳴らしてみる(フェイント)
+            let fakeWin = new Audio("https://soundeffect-lab.info/sound/anime/mp3/jean1.mp3");
+            fakeWin.volume = globalVol;
+            fakeWin.play();
+        }
+        speed *= 0.985;
+        angle += speed * Math.PI/180;
+        drawRoulette(angle);
+
+        if (faked && speed < 0.1) {
+            finishSpin(angle);
+        } else {
+            requestAnimationFrame(loop);
+        }
+    };
+    loop();
+}
+
+function finishSpin(finalAngle) {
+    isSpinning = false;
+
+    // Calc Result
+    // 0rad is right (3 o'clock). Needle is top (270deg / 1.5PI).
+    // Effective Angle = (270 - deg) normalized
+    const total = items.length;
+    const arc = (Math.PI * 2) / total;
+    const normAngle = finalAngle % (Math.PI * 2);
+    
+    // 針の位置にあるインデックスを逆算
+    let index = Math.floor(((1.5 * Math.PI - normAngle + 2*Math.PI) % (2*Math.PI)) / arc);
+    let winItem = items[index];
+
+    // Chaos Logic on Finish
+    if (chaosType === 'mojibake') winItem = "▯▯▯▯▯▯";
+    if (chaosType === 'pixel') document.getElementById('rContainer').classList.add('chaos-pixel');
+    if (chaosType === 'invert') document.body.classList.add('chaos-dark');
+    if (chaosType === 'explosion') {
+        document.getElementById('rContainer').innerHTML = "<h1 style='font-size:80px;color:red'>BOOM!</h1>";
+    }
+    
+    // Display
+    document.getElementById('resultText').innerText = winItem;
+    
+    // Change BG
+    document.body.style.backgroundColor = COLORS[index % COLORS.length]; // Gradient is hard in CSS var, using simple color
+    
+    // Sound
+    playSound('win');
+
+    // History
+    if (chaosType !== 'mojibake') {
+        historyLog.unshift(winItem);
+        if(historyLog.length > 10) historyLog.pop();
+        renderHistory();
+    }
+
+    if (chaosType === 'reset_win') {
+        setTimeout(() => { alert("システムエラー"); resetAll(); }, 1000);
+    }
+}
+
+/**
+ * ==========================================
+ * SOUND MANAGER (80% ジャン / 20% その他)
+ * ==========================================
+ */
+function playSound(type) {
+    if (isMuted) return;
+
+    // --- 1. 回転中のティンパニ ---
+    if (type === 'roll') {
+        if (bgmSource) bgmSource.pause();
+        bgmSource = new Audio("https://soundeffect-lab.info/sound/anime/mp3/tympani-roll1.mp3");
+        bgmSource.loop = true;
+        // カオスで音量逆転なら爆音
+        bgmSource.volume = (chaosType === 'loud') ? 1.0 : globalVol;
+        bgmSource.play().catch(e=>{});
+    } 
+    
+    // --- 2. 当選音 ---
+    else if (type === 'win') {
+        if (bgmSource) { bgmSource.pause(); bgmSource = null; }
+
+        const soundJean = "https://soundeffect-lab.info/sound/anime/mp3/jean1.mp3";
+        const others = [
+            "https://soundeffect-lab.info/sound/anime/mp3/trumpet2.mp3",
+            "https://soundeffect-lab.info/sound/anime/mp3/shine3.mp3",
+            "https://soundeffect-lab.info/sound/anime/mp3/tin1.mp3"
+        ];
+
+        let targetUrl;
+        // 80% Jean, 20% Others
+        if (Math.random() < 0.8) {
+            targetUrl = soundJean;
+        } else {
+            targetUrl = others[Math.floor(Math.random() * others.length)];
+        }
+
+        let audio = new Audio(targetUrl);
+        audio.volume = (chaosType === 'loud') ? 1.0 : globalVol;
+        audio.play().catch(e=>{});
+    }
+}
+
+/**
+ * ==========================================
+ * CHAOS UTILS
+ * ==========================================
+ */
+function pickChaos() {
+    const list = [
+        'spam', 'modal', 'fakeAd',       // UI
+        'reverse', 'gravity', 'stop_fake', // Physics
+        'mojibake', 'pixel', 'invert', 'explosion', 'invisible', // Visual
+        'loud', 'reset_win' // System
+    ];
+    return list[Math.floor(Math.random() * list.length)];
+}
+
+function resetChaosStyles() {
+    const rc = document.getElementById('rContainer');
+    const cvs = document.getElementById('rouletteCanvas');
+    rc.className = 'roulette-container';
+    cvs.className = '';
+    document.body.classList.remove('chaos-dark');
+    document.getElementById('fakeAd').style.display = 'none';
+    if(document.getElementById('pointer')) return; 
+    // If exploded, restore
+    if (!rc.querySelector('canvas')) {
+        rc.innerHTML = `<div class="needle" id="needle">▼</div><canvas id="rouletteCanvas" width="500" height="500"></canvas>`;
+        drawRoulette();
+    }
+}
+
+// UI Harassment Implementations
+function handleSpamClick() {
+    const btn = document.getElementById('spinBtn');
+    if (clickSpamCount < 20) {
+        clickSpamCount++;
+        btn.innerText = `連打！(${20 - clickSpamCount})`;
+        btn.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
+        return false;
+    }
+    clickSpamCount = 0;
+    btn.innerText = "START";
+    btn.style.transform = "none";
+    return true;
+}
+
+function handleModalHell() {
+    return new Promise(resolve => {
+        let count = 0;
+        const m = document.getElementById('modalHell');
+        const msg = document.getElementById('modalMsg');
+        m.style.display = 'flex';
+        
+        window.nextModal = function() {
+            count++;
+            const texts = ["本当に？", "後悔しない？", "ご飯食べた？", "トイレ行った？", "押すなよ？", "本当に回すの？", "戻れないよ？", "ラストチャンス", "いいんですね？", "ファイナルアンサー？"];
+            if(count < 10) {
+                msg.innerText = texts[count] || "本当に？";
+            } else {
+                m.style.display = 'none';
+                resolve();
+            }
+        }
+    });
+}
+
+/**
+ * ==========================================
+ * UI FUNCTIONS (Tabs, Vol, Undo, URL)
+ * ==========================================
+ */
+// Tabs
+function renderTabs() {
+    const list = document.getElementById('tabList');
+    list.innerHTML = "";
+    tabs.forEach((t, i) => {
+        const div = document.createElement('div');
+        div.className = `tab-item ${i === currentTab ? 'active' : ''}`;
+        div.innerHTML = `
+            <span onclick="swapTab(${i})">${t.name}</span>
+            <span class="tab-edit" onclick="renameTab(${i})">編集</span>
+        `;
+        list.appendChild(div);
+    });
+}
+function swapTab(i) {
+    currentTab = i;
+    renderTabs();
+    updateInputFromTab();
+    parseItems();
+    drawRoulette();
+}
+function renameTab(i) {
+    const n = prompt("タブ名を変更:", tabs[i].name);
+    if(n) { tabs[i].name = n; renderTabs(); }
+}
+function updateInputFromTab() {
+    document.getElementById('inputs').value = tabs[currentTab].content;
+}
+
+// Volume Game
+function dropVolume() {
+    const ball = document.getElementById('volBall');
+    ball.style.display = 'block';
+    ball.style.top = '0px';
+    ball.style.left = Math.random() * 90 + '%';
+    
+    let y = 0;
+    let speed = 2;
+    const interval = setInterval(() => {
+        y += speed;
+        speed += 1;
+        ball.style.top = y + 'px';
+        if (y > 70) { // Hit bottom
+            clearInterval(interval);
+            const rect = document.getElementById('volBox').getBoundingClientRect();
+            const ballRect = ball.getBoundingClientRect();
+            const relativeX = ballRect.left - rect.left;
+            const pct = Math.max(0, Math.min(1, relativeX / rect.width));
+            
+            globalVol = pct;
+            alert(`音量が ${Math.round(pct*100)}% になりました`);
+        }
+    }, 20);
+}
+function toggleMute() {
+    isMuted = !isMuted;
+    alert(isMuted ? "MUTE ON" : "MUTE OFF");
+}
+
+// History
+function renderHistory() {
+    const ul = document.getElementById('historyUl');
+    ul.innerHTML = "";
+    historyLog.forEach(h => {
+        const li = document.createElement('li');
+        li.innerText = h;
+        ul.appendChild(li);
+    });
+}
+
+// URL Gen
+function genUrl() {
+    const data = { t: tabs, c: currentTab };
+    const str = JSON.stringify(data);
+    const b64 = btoa(encodeURIComponent(str));
+    window.location.hash = b64;
+    navigator.clipboard.writeText(window.location.href);
+    alert("URLをコピーしました！🔗");
+}
+function loadHash() {
+    if(window.location.hash) {
+        try {
+            const str = decodeURIComponent(atob(window.location.hash.substring(1)));
+            const data = JSON.parse(str);
+            if(data.t) tabs = data.t;
+            if(data.c !== undefined) currentTab = data.c;
+        } catch(e) {}
+    }
+}
+
+// Reset & Undo
+function resetAll() {
+    if(confirm("全消去しますか？")) {
+        prevContent = tabs[currentTab].content;
+        tabs[currentTab].content = "";
+        updateInputFromTab();
+        parseItems();
+        drawRoulette();
+        resetChaosStyles();
+    }
+}
+function undo() {
+    if(prevContent) {
+        tabs[currentTab].content = prevContent;
+        updateInputFromTab();
+        parseItems();
+        drawRoulette();
+    }
+}
+
+/**
+ * ==========================================
+ * BACKGROUND ANIMATION
+ * ==========================================
+ */
+const bgCvs = document.getElementById('bgCanvas');
+const bgCtx = bgCvs.getContext('2d');
+let shapes = [];
+
+function drawBackground() {
+    bgCvs.width = window.innerWidth;
+    bgCvs.height = window.innerHeight;
+    for(let i=0; i<40; i++) shapes.push(new Shape());
+}
+
+class Shape {
+    constructor() { this.reset(); }
+    reset() {
+        this.x = Math.random() * bgCvs.width;
+        this.y = Math.random() * -500;
+        this.size = Math.random() * 20 + 5;
+        this.speed = Math.random() * 1.5 + 0.5;
+        this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        this.type = Math.floor(Math.random()*3); // 0:cir, 1:rect, 2:tri
+    }
+    update() {
+        this.y += this.speed;
+        if(this.y > bgCvs.height) this.reset();
+    }
+    draw() {
+        bgCtx.fillStyle = this.color;
+        bgCtx.globalAlpha = 0.6;
+        bgCtx.beginPath();
+        if(this.type===0) bgCtx.arc(this.x, this.y, this.size, 0, 7);
+        else if(this.type===1) bgCtx.fillRect(this.x, this.y, this.size, this.size);
+        else {
+            bgCtx.moveTo(this.x, this.y);
+            bgCtx.lineTo(this.x+this.size, this.y+this.size);
+            bgCtx.lineTo(this.x-this.size, this.y+this.size);
+        }
+        bgCtx.fill();
+    }
+}
+
+function animBackground() {
+    bgCtx.clearRect(0,0,bgCvs.width,bgCvs.height);
+    shapes.forEach(s => { s.update(); s.draw(); });
+    requestAnimationFrame(animBackground);
+}
+window.onresize = () => { bgCvs.width = window.innerWidth; bgCvs.height = window.innerHeight; };
+
+</script>
 </body>
 </html>
