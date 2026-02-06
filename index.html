@@ -3,52 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>運命のルーレット・アルティメット EX + 祝砲</title>
+    <title>運命のルーレット・アルティメット・クソエディション</title>
     <style>
         :root {
-            --bg-grad: linear-gradient(to bottom, #ffffff 0%, #f0f2f5 100%);
-            --text-color: #333;
             --p-red: #ffb3ba; --p-yellow: #ffffba; --p-orange: #ffdfba;
-            --p-blue: #bae1ff; --p-purple: #e2baff; --p-green: #baffc9;
-            --mint-active: #b2ffb2;
+            --p-blue: #bae1ff; --p-purple: #e2baff; --p-green: #baffc9; --p-gray: #e0e0e0;
+            --mint: #f5fff5; --mint-active: #b2ffb2;
+            --border-green: #2e7d32;
         }
-        * { box-sizing: border-box; }
+
         body {
-            font-family: "Helvetica Neue", Arial, sans-serif;
-            margin: 0; padding: 0; background: var(--bg-grad); color: var(--text-color);
-            overflow: hidden; height: 100vh; display: flex; justify-content: center; align-items: center;
-            transition: background 1.2s ease;
+            margin: 0; padding: 0; min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            font-family: "Helvetica Neue", "Arial", "Hiragino Sans", sans-serif;
+            background: white; overflow: hidden;
+            transition: background 1s ease, filter 0.3s;
         }
-        #bgCanvas, #confettiCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
-        #confettiCanvas { z-index: 5; } /* 紙吹雪はルーレットより前面、UIより背面 */
-        
-        .container { display: grid; grid-template-columns: 240px 1fr 240px; gap: 40px; width: 95%; max-width: 1300px; height: 85vh; position: relative; z-index: 10; }
-        
-        .left-panel { display: flex; flex-direction: column; gap: 20px; justify-content: center; }
-        .audio-box { border: 1px solid #ddd; padding: 15px; border-radius: 15px; background: rgba(255, 255, 255, 0.9); text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .vol-game { position: relative; height: 70px; border-bottom: 3px solid #ccc; margin-bottom: 10px; background: #fff; overflow: hidden; border-radius: 5px; }
-        #volBall { width: 18px; height: 18px; background: #ff6b6b; border-radius: 50%; position: absolute; top: 0; left: 50%; display: none; }
-        #volText { font-weight: bold; color: #4a90e2; font-size: 16px; }
 
-        .tabs { display: flex; flex-direction: column; gap: 8px; }
-        .tab-item { padding: 12px; border: 1px solid #eee; background: white; cursor: pointer; border-radius: 10px; transition: 0.3s; display: flex; justify-content: space-between; font-size: 13px; }
-        .tab-item.active { background-color: var(--mint-active); font-weight: bold; transform: scale(1.05); }
-        
-        .center-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .res-display { font-size: 36px; font-weight: bold; margin-bottom: 15px; height: 50px; text-align: center; color: #333; text-shadow: 0 0 15px rgba(255,255,255,1); }
-        .r-wrap { position: relative; margin-bottom: 20px; }
-        .needle { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 40px; z-index: 20; color: #ff4444; }
-        canvas#rCvs { border-radius: 50%; box-shadow: 0 10px 40px rgba(0,0,0,0.15); background: white; }
-        
-        #spinBtn { width: 220px; height: 60px; font-size: 24px; background: #66cc66; color: white; border: none; border-bottom: 5px solid #44aa44; border-radius: 10px; cursor: pointer; }
-        textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 10px; background: rgba(255,255,255,0.85); resize: none; margin-top: 10px; }
+        /* 背景レイヤー */
+        #bgCanvas, #confettiCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -10; pointer-events: none; }
+        #confettiCanvas { z-index: 5; }
 
-        .hist-card { border: 1px solid #eee; border-radius: 20px; padding: 15px; height: 70%; background: rgba(255, 255, 255, 0.9); display: flex; flex-direction: column; }
-        .hist-list { list-style: none; padding: 0; overflow-y: auto; flex: 1; margin: 0; font-size: 14px; text-align: center; }
+        /* 全体レイアウト */
+        .main-container {
+            display: grid; grid-template-columns: 260px 1fr 260px;
+            gap: 50px; width: 95%; max-width: 1400px; height: 90vh;
+            align-items: center; z-index: 10;
+        }
 
-        /* 特殊演出 */
-        .c-dark { filter: invert(1) hue-rotate(180deg); background: #000 !important; }
-        #fakeAd { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 20px; background: #fff000; border: 5px solid red; z-index: 999; display: none; text-align: center; }
+        /* 左パネル：タブと音量 */
+        .left-panel { display: flex; flex-direction: column; gap: 30px; height: 100%; justify-content: center; }
+        .vol-section {
+            background: #fff; padding: 20px; border-radius: 15px; border: 1px solid #ddd; text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .vol-bar { width: 100%; height: 20px; background: #eee; position: relative; margin: 15px 0; border-radius: 10px; overflow: hidden; }
+        #volIndicator { position: absolute; top:0; left: 50%; width: 4px; height: 100%; background: #4a90e2; }
+        #volBall { width: 20px; height: 20px; background: #ff4444; border-radius: 50%; position: absolute; top: -50px; display: none; }
+        
+        .tabs { display: flex; flex-direction: column; gap: 10px; }
+        .tab-btn {
+            padding: 15px; border: 1px solid var(--border-green); background: white;
+            cursor: pointer; border-radius: 8px; text-align: left; transition: 0.3s;
+            display: flex; justify-content: space-between;
+        }
+        .tab-btn.active { background: var(--mint-active); border-radius: 20px; font-weight: bold; }
+        
+        .sys-btns { display: flex; flex-direction: column; gap: 10px; }
+        .btn-base { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-url { background: var(--p-blue); }
+        .btn-reset { background: var(--p-red); }
+        .btn-undo { background: var(--p-yellow); font-size: 12px; }
+
+        /* 中央パネル：ルーレット */
+        .center-panel { display: flex; flex-direction: column; align-items: center; position: relative; }
+        #resText { font-size: 48px; font-weight: bold; margin-bottom: 20px; height: 60px; color: #333; text-align: center; }
+        .r-wrap { position: relative; transition: all 0.5s; }
+        #needle { font-size: 60px; color: #ff4444; position: absolute; top: -40px; left: 50%; transform: translateX(-50%); z-index: 20; }
+        canvas#rCvs { border-radius: 50%; background: white; box-shadow: 0 20px 60px rgba(0,0,0,0.1); border: 8px solid #ddd; }
+        
+        #spinBtn {
+            width: 260px; height: 70px; font-size: 28px; background: #66cc66; color: white;
+            border: none; border-bottom: 6px solid #44aa44; border-radius: 15px;
+            margin: 30px 0; cursor: pointer; font-weight: bold;
+        }
+        #spinBtn:active { transform: translateY(3px); border-bottom-width: 2px; }
+        #itemsArea { width: 100%; max-width: 500px; height: 150px; padding: 15px; border-radius: 12px; border: 1px solid #ccc; font-size: 16px; line-height: 1.5; }
+
+        /* 右パネル：履歴 */
+        .right-panel { height: 100%; display: flex; flex-direction: column; justify-content: center; }
+        .hist-box {
+            border: 2px solid #ffb3ba; border-radius: 15px; background: white;
+            height: 500px; display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .hist-title { background: #fff0f0; padding: 10px; text-align: center; font-weight: bold; color: #ff6b6b; border-bottom: 1px solid #ffb3ba; }
+        #histUl { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
+        #histUl li { padding: 12px; border-bottom: 1px dotted #ffb3ba; text-align: center; font-size: 14px; color: #555; }
+
+        /* クソイベント用特殊スタイル */
+        .c-invert { filter: invert(1); }
+        .c-mosaic { filter: blur(10px) contrast(200%); }
+        .c-darkmode { background: #111 !important; }
+        .c-darkmode #resText { color: white; }
+        .c-darkmode .r-wrap { opacity: 0.1; }
+        .c-fall { transform: translateY(1000px) rotate(45deg) !important; }
+        .c-ghost { opacity: 0 !important; }
+        .c-mini { transform: scale(0.3) translate(300px, 300px); }
+        
+        #fakeBanner {
+            position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            width: 500px; padding: 40px; background: #fff000; border: 10px solid red;
+            z-index: 1000; display: none; text-align: center; font-weight: bold;
+        }
+        #closeX { font-size: 120px; color: red; cursor: pointer; display: block; }
     </style>
 </head>
 <body>
@@ -56,190 +104,340 @@
 <canvas id="bgCanvas"></canvas>
 <canvas id="confettiCanvas"></canvas>
 
-<div class="container">
+<div id="fakeBanner">
+    当選確率10000%UP中！！<br>ここをクリック！
+    <span id="closeX" onclick="this.parentElement.style.display='none'">×</span>
+    <p>（↑ 閉じるボタンがデカいだけ）</p>
+</div>
+
+<div class="main-container">
     <div class="left-panel">
-        <div class="audio-box">
-            <div>VOL: <span id="volText">50%</span></div>
-            <div class="vol-game" id="volGame"><div id="volBall"></div></div>
-            <button onclick="dropBall()" style="width:100%;">🔊 音量抽選</button>
+        <div class="vol-section">
+            <div style="font-size: 12px; color: #888;">VOLUME: <span id="volVal">50</span>%</div>
+            <div class="vol-bar" id="volBar">
+                <div id="volIndicator"></div>
+                <div id="volBall"></div>
+            </div>
+            <button class="btn-base" style="width: 100%; margin-bottom: 5px;" onclick="dropVolBall()">🔊 音量抽選</button>
+            <button class="btn-base" style="width: 100%; background: #eee;" onclick="toggleMute()" id="muteBtn">🔇 MUTE: OFF</button>
         </div>
-        <div class="tabs" id="tabs"></div>
-        <button onclick="copyUrl()" style="background:var(--p-blue)">🔗 保存・URLコピー</button>
-        <button onclick="hardReset()" style="background:var(--p-red)">⚠️ リセット</button>
+
+        <div class="tabs" id="tabsArea"></div>
+
+        <div class="sys-btns">
+            <button class="btn-base btn-url" onclick="issueUrl()">🔗 保存・URL発行</button>
+            <button class="btn-base btn-reset" onclick="resetRoulette()">⚠️ リセット</button>
+            <button class="btn-base btn-undo" onclick="undoReset()">↩️ 消す前を復活</button>
+        </div>
     </div>
 
     <div class="center-panel">
-        <div class="res-display" id="resText">READY</div>
+        <div id="resText">READY</div>
         <div class="r-wrap" id="rWrap">
-            <div class="needle">▼</div>
-            <canvas id="rCvs" width="380" height="380"></canvas>
+            <div id="needle">▼</div>
+            <canvas id="rCvs" width="500" height="500"></canvas>
         </div>
-        <button id="spinBtn" onclick="spin()">START</button>
-        <textarea id="itemsArea" placeholder="項目を改行で入力..."></textarea>
+        <button id="spinBtn" onclick="handleSpin()">SPIN!</button>
+        <textarea id="itemsArea" placeholder="ここに単語を改行で入力（最大500件）"></textarea>
     </div>
 
     <div class="right-panel">
-        <div class="hist-card">
-            <div style="text-align:center; color:#888; font-size:12px;">HISTORY</div>
-            <ul class="hist-list" id="histUl"></ul>
+        <div class="hist-box">
+            <div class="hist-title">HISTORY (LAST 10)</div>
+            <ul id="histUl"></ul>
         </div>
     </div>
 </div>
 
-<div id="fakeAd"><b>⚠️重要⚠️</b><p>100万人目の訪問者です！</p><button onclick="this.parentElement.style.display='none'">閉じる</button></div>
-
 <script>
-const COLORS = ['#ffb3ba', '#ffffba', '#ffdfba', '#bae1ff', '#e2baff', '#baffc9', '#ffccf9'];
-let items = [], hist = [], spinning = false, globalVol = 0.5, bgm = null;
-let tabs = [ { name: "タブ 1", content: "大吉\n中吉\n小吉\n吉\n末吉\n凶" }, { name: "タブ 2", content: "" }, { name: "タブ 3", content: "" }, { name: "タブ 4", content: "" }, { name: "タブ 5", content: "" } ];
+// --- 基本設定 ---
+const COLORS = ['#ffb3ba', '#ffffba', '#ffdfba', '#bae1ff', '#e2baff', '#baffc9', '#e0e0e0'];
+let items = [], hist = [], spinning = false, globalVol = 0.5, isMuted = false;
+let tabs = [
+    { name: "リスト 1", content: "大吉\n中吉\n小吉\n吉\n末吉\n凶" },
+    { name: "リスト 2", content: "" },
+    { name: "リスト 3", content: "" },
+    { name: "リスト 4", content: "" },
+    { name: "リスト 5", content: "" }
+];
 let curTabIdx = 0;
-let confettis = [];
+let lastContent = "";
+let clickCount = 0;
 
-window.onload = () => { renderTabs(); syncTab(); initBg(); updateVolDisp(); };
+// --- 初期化 ---
+window.onload = () => {
+    initBg();
+    renderTabs();
+    syncTab();
+    loop();
+};
 
-function syncTab() { document.getElementById('itemsArea').value = tabs[curTabIdx].content; updateItems(); }
+function syncTab() {
+    document.getElementById('itemsArea').value = tabs[curTabIdx].content;
+    updateItems();
+}
+
 function updateItems() {
-    items = document.getElementById('itemsArea').value.split('\n').filter(t => t.trim() !== "");
+    items = document.getElementById('itemsArea').value.split('\n').filter(t => t.trim() !== "").slice(0, 500);
     tabs[curTabIdx].content = document.getElementById('itemsArea').value;
     drawRoulette();
 }
 document.getElementById('itemsArea').addEventListener('input', updateItems);
 
+// --- ルーレット描画 ---
 function drawRoulette(offset = 0) {
     const cvs = document.getElementById('rCvs'), ctx = cvs.getContext('2d'), r = cvs.width / 2;
-    ctx.clearRect(0,0,cvs.width,cvs.height);
-    if(items.length === 0) return;
-    const arc = (Math.PI*2) / items.length;
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    if (items.length === 0) return;
+
+    const arc = (Math.PI * 2) / items.length;
     items.forEach((txt, i) => {
         const ang = offset + (i * arc);
-        ctx.beginPath(); ctx.moveTo(r,r); ctx.arc(r,r,r-8,ang,ang+arc);
-        ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
-        ctx.save(); ctx.translate(r,r); ctx.rotate(ang + arc/2); ctx.textAlign="right"; ctx.fillStyle="#333";
-        ctx.font="bold 15px sans-serif"; ctx.fillText(txt.slice(0,9), r-25, 5); ctx.restore();
+        ctx.beginPath();
+        ctx.moveTo(r, r);
+        ctx.arc(r, r, r - 10, ang, ang + arc);
+        ctx.fillStyle = COLORS[i % COLORS.length];
+        ctx.fill();
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(r, r);
+        ctx.rotate(ang + arc / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#333";
+        ctx.font = "bold 20px sans-serif";
+        ctx.fillText(txt.slice(0, 10), r - 40, 10);
+        ctx.restore();
     });
 }
 
-function dropBall() {
-    const b = document.getElementById('volBall'); b.style.display="block";
-    let y=0, speed=1;
-    const itv = setInterval(()=>{
-        y+=speed; speed+=0.8; b.style.top=y+'px';
-        if(y>60) { clearInterval(itv); globalVol = Math.random(); updateVolDisp(); }
-    },20);
+// --- 音量・UI機能 ---
+function dropVolBall() {
+    const b = document.getElementById('volBall'), bar = document.getElementById('volBar');
+    b.style.display = "block";
+    let y = -50, speed = 2, x = Math.random() * (bar.offsetWidth - 20);
+    b.style.left = x + "px";
+    const itv = setInterval(() => {
+        y += speed; speed += 0.5; b.style.top = y + "px";
+        if (y >= 0) {
+            clearInterval(itv);
+            globalVol = x / bar.offsetWidth;
+            document.getElementById('volIndicator').style.left = x + "px";
+            document.getElementById('volVal').innerText = Math.round(globalVol * 100);
+            b.style.display = "none";
+        }
+    }, 20);
 }
-function updateVolDisp() { document.getElementById('volText').innerText = Math.round(globalVol * 100) + "%"; }
 
-function playS(type) {
-    const a = new Audio(type === 'roll' ? "https://soundeffect-lab.info/sound/anime/mp3/tympani-roll1.mp3" : "https://soundeffect-lab.info/sound/anime/mp3/jean1.mp3");
-    a.volume = globalVol; if(type === 'roll') { bgm = a; a.loop = true; } a.play().catch(()=>{});
+function toggleMute() {
+    isMuted = !isMuted;
+    document.getElementById('muteBtn').innerText = isMuted ? "🔊 MUTE: ON" : "🔇 MUTE: OFF";
 }
 
-async function spin() {
-    if(spinning || items.length === 0) return;
+function playSnd(url, forceVol = null) {
+    if (isMuted) return null;
+    const a = new Audio(url);
+    a.volume = forceVol !== null ? forceVol : globalVol;
+    a.play().catch(() => {});
+    return a;
+}
+
+// --- スピン処理 ---
+async function handleSpin() {
+    if (spinning || items.length === 0) return;
+
+    // 20%でクソイベント抽選
+    const isEvent = Math.random() < 0.2;
+    const eventType = isEvent ? Math.floor(Math.random() * 25) : -1;
+
+    // --- 事前嫌がらせイベント ---
+    if (eventType === 20) { // 連打要求
+        if (clickCount < 100) {
+            clickCount++;
+            document.getElementById('resText').innerText = `あと${100 - clickCount}回連打しろ`;
+            return;
+        }
+        clickCount = 0;
+    }
+    if (eventType === 21) { // プロンプト地獄
+        for(let i=0; i<10; i++) { if(!confirm(`本当に回すの？ (${i+1}/10)`)) return; }
+    }
+    if (eventType === 22) { // 広告バナー
+        document.getElementById('fakeBanner').style.display = 'block';
+    }
+
     spinning = true;
-    playS('roll');
+    resetVisuals();
+
+    const rollSnd = playSnd("https://soundeffect-lab.info/sound/anime/mp3/tympani-roll1.mp3");
+    if (rollSnd) rollSnd.loop = true;
+
     const winIdx = Math.floor(Math.random() * items.length);
-    const rotations = 8 + Math.random() * 5; 
-    const targetAng = (rotations * Math.PI * 2) + (1.5 * Math.PI - (winIdx * (Math.PI*2/items.length)) - (Math.PI/items.length));
+    let rotations = 10 + Math.random() * 5;
+    const arc = (Math.PI * 2) / items.length;
+    
+    // イベント：逆噴射
+    const isReverse = eventType === 3;
+    const direction = isReverse ? -1 : 1;
+
+    // イベント：透明化
+    if (eventType === 23) document.getElementById('rCvs').classList.add('c-ghost');
+
     let start = performance.now();
+    const duration = 5000;
+
     function animate(now) {
-        let progress = Math.min((now - start) / 5000, 1);
-        drawRoulette(targetAng * (1 - Math.pow(1 - progress, 4)));
-        if (progress < 1) requestAnimationFrame(animate);
-        else finalizeSpin(winIdx);
+        let progress = Math.min((now - start) / duration, 1);
+        
+        // イベント：低解像度（回るほどモザイク）
+        if (eventType === 17) document.body.style.filter = `blur(${progress * 10}px)`;
+
+        let ease = 1 - Math.pow(1 - progress, 4);
+        let currentAng = (rotations * Math.PI * 2 * ease) * direction;
+        
+        // イベント：ワープ（針がすり抜ける演出は描画オフセットで再現）
+        if (eventType === 8 && progress > 0.8) currentAng += Math.PI;
+
+        drawRoulette(currentAng);
+
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            if (rollSnd) rollSnd.pause();
+            finalize(winIdx, eventType);
+        }
     }
     requestAnimationFrame(animate);
 }
 
-function finalizeSpin(winIdx) {
-    spinning = false; if(bgm) bgm.pause();
-    const winItem = items[winIdx];
+function finalize(winIdx, eventType) {
+    spinning = false;
+    let winItem = items[winIdx];
     const winColor = COLORS[winIdx % COLORS.length];
-    document.getElementById('resText').innerText = winItem;
-    document.body.style.background = `linear-gradient(to bottom, ${winColor} 0%, #ffffff 100%)`;
-    playS('win');
-    createConfetti(winColor); // 紙吹雪生成！
-    hist.unshift(winItem); renderHist();
+
+    // イベント：強制やり直し
+    if (eventType === 24) {
+        alert("エラー：もう一度やり直してください");
+        resetVisuals();
+        return;
+    }
+
+    // イベント：音量逆転 (爆音)
+    const finalVol = eventType === 22 ? 0.7 : globalVol;
+    playSnd("https://soundeffect-lab.info/sound/anime/mp3/trumpet-majime1.mp3", finalVol);
+
+    // 背景色変更
+    document.body.style.background = `linear-gradient(to bottom, ${winColor}, white)`;
+
+    // イベント：文字化け
+    let displayText = winItem;
+    if (eventType === 11) displayText = "▯▯▯▯▯▯";
+    if (eventType === 16) { // ゲシュタルト崩壊
+        items = items.map(() => winItem);
+        drawRoulette();
+    }
+
+    document.getElementById('resText').innerText = displayText;
+
+    // 視覚的イベント適用
+    if (eventType === 1) document.getElementById('rWrap').style.transition = "none"; // 急停止用
+    if (eventType === 5) document.getElementById('rWrap').classList.add('c-fall'); // 重力
+    if (eventType === 18) document.body.classList.add('c-invert'); // 反転
+    if (eventType === 22) document.body.classList.add('c-darkmode'); // 暗闇
+    if (eventType === 14) { // 爆発
+        document.getElementById('resText').innerText = "ドカーン！";
+        document.getElementById('rWrap').classList.add('c-ghost');
+    }
+
+    // 履歴更新
+    hist.unshift(winItem);
+    if (hist.length > 10) hist.pop();
+    renderHist();
 }
 
-// --- 紙吹雪システム ---
-class Confetti {
-    constructor(color) {
-        this.x = window.innerWidth / 2;
-        this.y = window.innerHeight / 2;
-        this.size = Math.random() * 10 + 5;
-        this.color = color;
-        this.vx = (Math.random() - 0.5) * 20;
-        this.vy = (Math.random() - 0.8) * 20;
-        this.gravity = 0.3;
-        this.rotation = Math.random() * 360;
-        this.rSpeed = (Math.random() - 0.5) * 10;
-        this.opacity = 1;
+function resetVisuals() {
+    document.body.className = "";
+    document.body.style.filter = "";
+    document.getElementById('rWrap').className = "r-wrap";
+    document.getElementById('rCvs').className = "";
+    document.getElementById('fakeBanner').style.display = "none";
+}
+
+// --- その他UI ---
+function renderTabs() {
+    const area = document.getElementById('tabsArea');
+    area.innerHTML = "";
+    tabs.forEach((t, i) => {
+        const b = document.createElement('div');
+        b.className = `tab-btn ${i === curTabIdx ? 'active' : ''}`;
+        b.innerHTML = `<span onclick="selectTab(${i})">${t.name}</span><span style="font-size:10px; opacity:0.5;" onclick="renameTab(${i})">編集</span>`;
+        area.appendChild(b);
+    });
+}
+function selectTab(i) { curTabIdx = i; renderTabs(); syncTab(); }
+function renameTab(i) { const n = prompt("名前変更:", tabs[i].name); if(n) { tabs[i].name = n; renderTabs(); } }
+
+function renderHist() {
+    const ul = document.getElementById('histUl');
+    ul.innerHTML = hist.map(h => `<li>${h}</li>`).join('');
+}
+
+function resetRoulette() {
+    if (confirm("全データをリセットしますか？")) {
+        lastContent = document.getElementById('itemsArea').value;
+        document.getElementById('itemsArea').value = "";
+        updateItems();
+        resetVisuals();
     }
-    update() {
-        this.x += this.vx; this.y += this.vy; this.vy += this.gravity;
-        this.rotation += this.rSpeed; this.opacity -= 0.005;
-    }
-    draw(ctx) {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.rotation * Math.PI / 180);
-        ctx.globalAlpha = this.opacity;
-        ctx.fillStyle = this.color;
-        ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
-        ctx.restore();
+}
+function undoReset() {
+    if (lastContent) {
+        document.getElementById('itemsArea').value = lastContent;
+        updateItems();
     }
 }
 
-function createConfetti(color) {
-    for(let i=0; i<100; i++) confettis.push(new Confetti(color));
+function issueUrl() {
+    const data = btoa(encodeURIComponent(JSON.stringify(tabs)));
+    const url = location.origin + location.pathname + "#" + data;
+    navigator.clipboard.writeText(url);
+    alert("🔗 リンクをコピーしました！このURLからいつでも復元できます。");
 }
 
-// --- 背景・ループ処理 ---
+// --- 背景アニメーション ---
 let shapes = [];
 function initBg() {
     const c = document.getElementById('bgCanvas');
-    const cc = document.getElementById('confettiCanvas');
-    c.width = cc.width = window.innerWidth; c.height = cc.height = window.innerHeight;
-    for(let i=0; i<40; i++) shapes.push({ x: Math.random()*c.width, y: Math.random()*c.height, s: Math.random()*20+10, sp: Math.random()*3+2, col: COLORS[Math.floor(Math.random()*7)], t: Math.floor(Math.random()*3) });
-    loop();
+    c.width = window.innerWidth; c.height = window.innerHeight;
+    for(let i=0; i<30; i++) {
+        shapes.push({
+            x: Math.random() * c.width, y: Math.random() * c.height,
+            size: Math.random() * 30 + 10,
+            type: Math.floor(Math.random() * 3),
+            speed: Math.random() * 2 + 1,
+            color: COLORS[Math.floor(Math.random() * COLORS.length)]
+        });
+    }
 }
 
 function loop() {
     const c = document.getElementById('bgCanvas'), ctx = c.getContext('2d');
-    const cc = document.getElementById('confettiCanvas'), cctx = cc.getContext('2d');
     ctx.clearRect(0,0,c.width,c.height);
-    cctx.clearRect(0,0,cc.width,cc.height);
-
-    // 背景模様
-    shapes.forEach(p => {
-        p.y += p.sp; if(p.y > c.height) p.y = -30;
-        ctx.fillStyle = p.col; ctx.globalAlpha = 0.6; ctx.beginPath();
-        if(p.t===0) ctx.arc(p.x, p.y, p.s/2, 0, 7);
-        else if(p.t===1) ctx.fillRect(p.x, p.y, p.s, p.s);
-        else { ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+p.s, p.y+p.s); ctx.lineTo(p.x-p.s, p.y+p.s); ctx.closePath(); }
+    shapes.forEach(s => {
+        s.y += s.speed;
+        if (s.y > c.height) s.y = -50;
+        ctx.fillStyle = s.color;
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath();
+        if(s.type === 0) ctx.arc(s.x, s.y, s.size/2, 0, Math.PI*2);
+        else if(s.type === 1) ctx.fillRect(s.x, s.y, s.size, s.size);
+        else { ctx.moveTo(s.x, s.y); ctx.lineTo(s.x+s.size, s.y+s.size); ctx.lineTo(s.x-s.size, s.y+s.size); ctx.closePath(); }
         ctx.fill();
     });
-
-    // 紙吹雪
-    confettis = confettis.filter(cf => cf.opacity > 0 && cf.y < cc.height);
-    confettis.forEach(cf => { cf.update(); cf.draw(cctx); });
-
     requestAnimationFrame(loop);
 }
-
-function renderTabs() {
-    const d = document.getElementById('tabs'); d.innerHTML = "";
-    tabs.forEach((t,i) => {
-        const div = document.createElement('div');
-        div.className = `tab-item ${i===curTabIdx?'active':''}`;
-        div.onclick = () => { curTabIdx=i; renderTabs(); syncTab(); };
-        div.innerText = t.name; d.appendChild(div);
-    });
-}
-function renderHist() { const u = document.getElementById('histUl'); u.innerHTML=""; hist.forEach(h => { const l=document.createElement('li'); l.innerText=h; u.appendChild(l); }); }
-function hardReset() { if(confirm("消すよ？")){ tabs[curTabIdx].content=""; syncTab(); } }
-function copyUrl() { alert("URLコピーしました（擬似）"); }
 </script>
 </body>
 </html>
