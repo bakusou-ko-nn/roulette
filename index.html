@@ -3,171 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>運命のルーレット・アルティメット・クソエディション改</title>
+    <title>運命のルーレット・アルティメット EX</title>
     <style>
         :root {
+            --bg-grad: linear-gradient(to bottom, #ffffff 0%, #f0f2f5 100%);
+            --text-color: #333;
             --p-red: #ffb3ba; --p-yellow: #ffffba; --p-orange: #ffdfba;
-            --p-blue: #bae1ff; --p-purple: #e2baff; --p-green: #baffc9; --p-gray: #e0e0e0;
-            --mint: #f5fff5; --mint-active: #b2ffb2;
-            --border-green: #2e7d32;
+            --p-blue: #bae1ff; --p-purple: #e2baff; --p-green: #baffc9;
+            --p-gray: #e0e0e0; --mint-active: #b2ffb2; --border-deep: #4a90e2;
         }
-
+        * { box-sizing: border-box; }
         body {
-            margin: 0; padding: 0; min-height: 100vh;
-            display: flex; justify-content: center; align-items: center;
-            font-family: "Helvetica Neue", "Arial", "Hiragino Sans", sans-serif;
-            background: white; overflow: hidden;
-            transition: background 1s ease, filter 0.3s;
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
+            margin: 0; padding: 0; background: var(--bg-grad); color: var(--text-color);
+            overflow: hidden; height: 100vh; display: flex; justify-content: center; align-items: center;
+            transition: background 1.2s ease; /* グラデーション変化を滑らかに */
         }
-
-        #bgCanvas, #confettiCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -10; pointer-events: none; }
-        #confettiCanvas { z-index: 5; }
-
-        .main-container {
-            display: grid; grid-template-columns: 260px 1fr 260px;
-            gap: 50px; width: 95%; max-width: 1400px; height: 90vh;
-            align-items: center; z-index: 10;
-        }
-
-        .left-panel { display: flex; flex-direction: column; gap: 30px; height: 100%; justify-content: center; }
-        .vol-section {
-            background: #fff; padding: 20px; border-radius: 15px; border: 1px solid #ddd; text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-        .vol-bar { width: 100%; height: 20px; background: #eee; position: relative; margin: 15px 0; border-radius: 10px; overflow: hidden; }
-        #volIndicator { position: absolute; top:0; left: 50%; width: 4px; height: 100%; background: #4a90e2; }
-        #volBall { width: 20px; height: 20px; background: #ff4444; border-radius: 50%; position: absolute; top: -50px; display: none; }
+        #bgCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+        .container { display: grid; grid-template-columns: 240px 1fr 240px; gap: 40px; width: 95%; max-width: 1300px; height: 85vh; position: relative; z-index: 1; }
         
-        .tabs { display: flex; flex-direction: column; gap: 10px; }
-        .tab-btn {
-            padding: 15px; border: 1px solid var(--border-green); background: white;
-            cursor: pointer; border-radius: 8px; text-align: left; transition: 0.3s;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .tab-btn.active { background: var(--mint-active); border-radius: 20px; font-weight: bold; border-width: 2px; }
-        .rename-ico { font-size: 16px; opacity: 0.4; padding: 5px; cursor: pointer; transition: 0.2s; }
-        .rename-ico:hover { opacity: 1; color: var(--border-green); }
-        
-        .sys-btns { display: flex; flex-direction: column; gap: 10px; }
-        .btn-base { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-url { background: var(--p-blue); }
-        .btn-reset { background: var(--p-red); }
-        .btn-undo { background: var(--p-yellow); font-size: 12px; }
+        .left-panel { display: flex; flex-direction: column; gap: 20px; justify-content: center; }
+        .audio-box { border: 1px solid #ddd; padding: 15px; border-radius: 15px; background: rgba(255, 255, 255, 0.9); text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .vol-game { position: relative; height: 70px; border-bottom: 3px solid #ccc; margin-bottom: 10px; background: #fff; overflow: hidden; border-radius: 5px; }
+        #volBall { width: 18px; height: 18px; background: #ff6b6b; border-radius: 50%; position: absolute; top: 0; left: 50%; display: none; }
+        .vol-info { font-size: 11px; color: #888; margin-bottom: 5px; }
+        #volText { font-weight: bold; color: #4a90e2; font-size: 16px; }
 
-        .center-panel { display: flex; flex-direction: column; align-items: center; position: relative; }
-        #resText { font-size: 48px; font-weight: bold; margin-bottom: 20px; height: 60px; color: #333; text-align: center; }
-        .r-wrap { position: relative; transition: all 0.5s; }
-        #needle { font-size: 60px; color: #ff4444; position: absolute; top: -40px; left: 50%; transform: translateX(-50%); z-index: 20; }
-        canvas#rCvs { border-radius: 50%; background: white; box-shadow: 0 20px 60px rgba(0,0,0,0.1); border: 8px solid #ddd; }
-        
-        #spinBtn {
-            width: 260px; height: 70px; font-size: 28px; background: #66cc66; color: white;
-            border: none; border-bottom: 6px solid #44aa44; border-radius: 15px;
-            margin: 30px 0; cursor: pointer; font-weight: bold;
-        }
-        #spinBtn:active { transform: translateY(3px); border-bottom-width: 2px; }
-        #itemsArea { width: 100%; max-width: 500px; height: 150px; padding: 15px; border-radius: 12px; border: 1px solid #ccc; font-size: 16px; line-height: 1.5; }
+        .tabs { display: flex; flex-direction: column; gap: 8px; }
+        .tab-item { padding: 12px; border: 1px solid #eee; background: white; cursor: pointer; border-radius: 10px; transition: 0.3s; display: flex; justify-content: space-between; font-size: 13px; }
+        .tab-item.active { background-color: var(--mint-active); border-color: transparent; font-weight: bold; transform: scale(1.05); }
+        .sys-btns { display: flex; flex-direction: column; gap: 8px; }
+        button { padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:active { transform: scale(0.95); }
 
-        .right-panel { height: 100%; display: flex; flex-direction: column; justify-content: center; }
-        .hist-box {
-            border: 2px solid #ffb3ba; border-radius: 15px; background: white;
-            height: 500px; display: flex; flex-direction: column; overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-        .hist-title { background: #fff0f0; padding: 10px; text-align: center; font-weight: bold; color: #ff6b6b; border-bottom: 1px solid #ffb3ba; }
-        #histUl { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
-        #histUl li { padding: 12px; border-bottom: 1px dotted #ffb3ba; text-align: center; font-size: 14px; color: #555; }
+        .center-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .res-display { font-size: 32px; font-weight: bold; margin-bottom: 15px; height: 45px; text-align: center; color: #333; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
+        .r-wrap { position: relative; margin-bottom: 20px; }
+        .needle { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 40px; z-index: 10; text-shadow: 0 2px 5px rgba(0,0,0,0.2); color: #ff4444; }
+        canvas#rCvs { border-radius: 50%; box-shadow: 0 10px 40px rgba(0,0,0,0.15); background: white; }
+        #spinBtn { width: 220px; height: 60px; font-size: 24px; background: #66cc66; color: white; border-bottom: 5px solid #44aa44; margin-bottom: 15px; }
+        textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; background: rgba(255,255,255,0.85); resize: none; }
 
-        /* 特殊エフェクト用 */
-        .c-invert { filter: invert(1); }
-        .c-darkmode { background: #111 !important; }
-        .c-darkmode #resText { color: white; }
-        .c-darkmode .r-wrap { opacity: 0.1; }
-        .c-fall { transform: translateY(1200px) rotate(45deg) !important; }
-        .c-ghost { opacity: 0 !important; }
-        
-        #fakeBanner {
-            position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
-            width: 500px; padding: 40px; background: #fff000; border: 10px solid red;
-            z-index: 1000; display: none; text-align: center; font-weight: bold;
-        }
+        .right-panel { display: flex; flex-direction: column; justify-content: center; }
+        .hist-card { border: 1px solid #eee; border-radius: 20px; padding: 15px; height: 70%; background: rgba(255, 255, 255, 0.9); display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
+        .hist-title { text-align: center; color: #888; font-size: 12px; margin-bottom: 10px; border-bottom: 1px solid #eee; }
+        .hist-list { list-style: none; padding: 0; overflow-y: auto; flex: 1; margin: 0; }
+        .hist-list li { padding: 8px; border-bottom: 1px solid #f9f9f9; font-size: 14px; text-align: center; animation: fadeIn 0.5s; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* 特殊演出用 */
+        .c-dark { filter: invert(1) hue-rotate(180deg); background: #000 !important; }
+        .c-pixel { image-rendering: pixelated; transform: scale(0.1) rotate(720deg); transition: 5s; }
+        .c-fall { transform: translateY(150vh) rotate(45deg); transition: 1.5s ease-in; }
+        .c-ghost { opacity: 0.1; }
+        #fakeAd { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; padding: 20px; background: #fff000; border: 5px solid red; z-index: 999; display: none; text-align: center; box-shadow: 10px 10px 0 black; }
+        #modalHell { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: none; justify-content: center; align-items: center; }
     </style>
 </head>
 <body>
 
 <canvas id="bgCanvas"></canvas>
-<canvas id="confettiCanvas"></canvas>
 
-<div id="fakeBanner">
-    当選確率10000%UP中！！<br>ここをクリック！
-    <span style="font-size:120px; color:red; cursor:pointer; display:block;" onclick="this.parentElement.style.display='none'">×</span>
-</div>
-
-<div class="main-container">
+<div class="container">
     <div class="left-panel">
-        <div class="vol-section">
-            <div style="font-size: 12px; color: #888;">VOLUME: <span id="volVal">50</span>%</div>
-            <div class="vol-bar" id="volBar">
-                <div id="volIndicator"></div>
-                <div id="volBall"></div>
-            </div>
-            <button class="btn-base" style="width: 100%; margin-bottom: 5px;" onclick="dropVolBall()">🔊 音量抽選</button>
-            <button class="btn-base" style="width: 100%; background: #eee;" onclick="toggleMute()" id="muteBtn">🔇 MUTE: OFF</button>
+        <div class="audio-box">
+            <div class="vol-info">VOL: <span id="volText">50%</span></div>
+            <div class="vol-game" id="volGame"><div id="volBall"></div></div>
+            <button onclick="dropBall()" style="background:#f0f0f0; width:100%;">🔊 音量抽選</button>
+            <button onclick="toggleMute()" id="muteBtn" style="background:#f0f0f0; width:100%; margin-top:5px;">🔇 Mute: OFF</button>
         </div>
-
-        <div class="tabs" id="tabsArea"></div>
-
+        <div class="tabs" id="tabs"></div>
         <div class="sys-btns">
-            <button class="btn-base btn-url" onclick="issueUrl()">🔗 保存・URLコピー</button>
-            <button class="btn-base btn-reset" onclick="resetRoulette()">⚠️ リセット</button>
-            <button class="btn-base btn-undo" onclick="undoReset()">↩️ 戻す(Undo)</button>
+            <button onclick="copyUrl()" style="background:var(--p-blue)">🔗 保存・URLコピー</button>
+            <button onclick="hardReset()" style="background:var(--p-red)">⚠️ リセット</button>
+            <button onclick="undo()" style="background:var(--p-yellow); font-size:11px;">↩️ 戻す(Undo)</button>
         </div>
     </div>
 
     <div class="center-panel">
-        <div id="resText">READY</div>
+        <div class="res-display" id="resText">READY</div>
         <div class="r-wrap" id="rWrap">
-            <div id="needle">▼</div>
-            <canvas id="rCvs" width="500" height="500"></canvas>
+            <div class="needle">▼</div>
+            <canvas id="rCvs" width="380" height="380"></canvas>
         </div>
-        <button id="spinBtn" onclick="handleSpin()">SPIN!</button>
-        <textarea id="itemsArea" placeholder="ここに単語を改行で入力"></textarea>
+        <button id="spinBtn" onclick="spin()">START</button>
+        <textarea id="itemsArea" placeholder="項目を改行で入力..."></textarea>
     </div>
 
     <div class="right-panel">
-        <div class="hist-box">
-            <div class="hist-title">HISTORY (LAST 10)</div>
-            <ul id="histUl"></ul>
+        <div class="hist-card">
+            <div class="hist-title">HISTORY</div>
+            <ul class="hist-list" id="histUl"></ul>
         </div>
     </div>
 </div>
 
+<div id="fakeAd"><b>⚠️重要なお知らせ⚠️</b><p>おめでとうございます！<br>あなたは100万人目の訪問者です</p><button onclick="this.parentElement.style.display='none'">受け取る</button></div>
+<div id="modalHell"><div style="background:white; padding:40px; border-radius:20px; text-align:center;"><p id="mMsg" style="font-size:20px; font-weight:bold;">準備はいいですか？</p><button onclick="nextM()" style="font-size:18px; padding:10px 30px; background:red; color:white;">はい</button></div></div>
+
 <script>
-const COLORS = ['#ffb3ba', '#ffffba', '#ffdfba', '#bae1ff', '#e2baff', '#baffc9', '#e0e0e0'];
-let items = [], hist = [], spinning = false, globalVol = 0.5, isMuted = false;
-let tabs = [
-    { name: "タブ 1", content: "焼肉\n寿司\nうどん\nカレー" },
-    { name: "タブ 2", content: "" },
-    { name: "タブ 3", content: "" },
-    { name: "タブ 4", content: "" },
-    { name: "タブ 5", content: "" }
-];
+const COLORS = ['#ffb3ba', '#ffffba', '#ffdfba', '#bae1ff', '#e2baff', '#baffc9', '#ffccf9'];
+let items = [], hist = [], prevStr = "", spinning = false, currentCType = null, bgm = null;
+let tabs = [ { name: "タブ 1", content: "焼肉\n寿司\nうどん\nカレー\nハンバーグ\nピザ" }, { name: "タブ 2", content: "" }, { name: "タブ 3", content: "" }, { name: "タブ 4", content: "" }, { name: "タブ 5", content: "" } ];
 let curTabIdx = 0;
-let lastContent = "";
-let clickCount = 0;
+let globalVol = 0.5;
+let isMuted = false;
 
-window.onload = () => {
-    initBg();
-    renderTabs();
-    syncTab();
-    loop();
-};
+window.onload = () => { loadHash(); renderTabs(); syncTab(); initBg(); updateVolDisp(); };
 
-function syncTab() {
-    document.getElementById('itemsArea').value = tabs[curTabIdx].content;
-    updateItems();
-}
-
+function syncTab() { document.getElementById('itemsArea').value = tabs[curTabIdx].content; updateItems(); }
 function updateItems() {
     items = document.getElementById('itemsArea').value.split('\n').filter(t => t.trim() !== "").slice(0, 500);
     tabs[curTabIdx].content = document.getElementById('itemsArea').value;
@@ -177,183 +122,159 @@ document.getElementById('itemsArea').addEventListener('input', updateItems);
 
 function drawRoulette(offset = 0) {
     const cvs = document.getElementById('rCvs'), ctx = cvs.getContext('2d'), r = cvs.width / 2;
-    ctx.clearRect(0, 0, cvs.width, cvs.height);
-    if (items.length === 0) return;
-    const arc = (Math.PI * 2) / items.length;
+    ctx.clearRect(0,0,cvs.width,cvs.height);
+    ctx.beginPath(); ctx.arc(r,r,r-5,0,Math.PI*2); ctx.fillStyle="#fff"; ctx.fill();
+    ctx.lineWidth=4; ctx.strokeStyle="#ddd"; ctx.stroke();
+    if(items.length === 0) return;
+    const arc = (Math.PI*2) / items.length;
     items.forEach((txt, i) => {
         const ang = offset + (i * arc);
-        ctx.beginPath(); ctx.moveTo(r, r); ctx.arc(r, r, r - 10, ang, ang + arc);
+        ctx.beginPath(); ctx.moveTo(r,r); ctx.arc(r,r,r-8,ang,ang+arc);
         ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
-        ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
-        ctx.save(); ctx.translate(r, r); ctx.rotate(ang + arc / 2);
-        ctx.textAlign = "right"; ctx.fillStyle = "#333"; ctx.font = "bold 20px sans-serif";
-        ctx.fillText(txt.slice(0, 10), r - 40, 10); ctx.restore();
+        ctx.save(); ctx.translate(r,r); ctx.rotate(ang + arc/2); ctx.textAlign="right"; ctx.fillStyle="#333";
+        ctx.font="bold 15px sans-serif"; ctx.fillText(txt.length > 9 ? txt.slice(0,8)+'..' : txt, r-25, 5); ctx.restore();
     });
 }
 
-function dropVolBall() {
-    const b = document.getElementById('volBall'), bar = document.getElementById('volBar');
-    b.style.display = "block";
-    let y = -50, speed = 2, x = Math.random() * (bar.offsetWidth - 20);
-    b.style.left = x + "px";
-    const itv = setInterval(() => {
-        y += speed; speed += 0.5; b.style.top = y + "px";
-        if (y >= 0) {
-            clearInterval(itv);
-            globalVol = x / bar.offsetWidth;
-            document.getElementById('volIndicator').style.left = x + "px";
-            document.getElementById('volVal').innerText = Math.round(globalVol * 100);
-            b.style.display = "none";
-        }
-    }, 20);
+function dropBall() {
+    const b = document.getElementById('volBall'); b.style.display="block"; b.style.top="0";
+    b.style.left = Math.random() * 80 + 10 + "%";
+    let y=0, speed=1;
+    const itv = setInterval(()=>{
+        y+=speed; speed+=0.8; b.style.top=y+'px';
+        if(y>60) { clearInterval(itv); globalVol = Math.random(); updateVolDisp(); playS('win'); }
+    },20);
+}
+function updateVolDisp() { document.getElementById('volText').innerText = Math.round(globalVol * 100) + "%"; }
+function toggleMute() { isMuted = !isMuted; document.getElementById('muteBtn').innerText = isMuted ? "🔇 Mute: ON" : "🔇 Mute: OFF"; }
+
+function playS(type) {
+    if(isMuted) return;
+    if(type === 'roll') {
+        if(bgm) bgm.pause();
+        bgm = new Audio("https://soundeffect-lab.info/sound/anime/mp3/tympani-roll1.mp3");
+        bgm.loop = true; bgm.volume = globalVol;
+        bgm.play().catch(()=>{});
+    } else {
+        if(bgm) { bgm.pause(); bgm = null; }
+        const a = new Audio("https://soundeffect-lab.info/sound/anime/mp3/jean1.mp3");
+        a.volume = globalVol; a.play().catch(()=>{});
+    }
 }
 
-function toggleMute() { isMuted = !isMuted; document.getElementById('muteBtn').innerText = isMuted ? "🔇 MUTE: ON" : "🔇 MUTE: OFF"; }
-
-async function handleSpin() {
-    if (spinning || items.length === 0) return;
-    const isEvent = Math.random() < 0.2;
-    const eventType = isEvent ? Math.floor(Math.random() * 25) : -1;
-    if (eventType === 20 && clickCount < 100) { clickCount++; document.getElementById('resText').innerText = `あと${100 - clickCount}回連打`; return; }
-    if (eventType === 21) { for(let i=0; i<10; i++) { if(!confirm(`後悔しませんか？ (${i+1}/10)`)) return; } }
-    if (eventType === 22) document.getElementById('fakeBanner').style.display = 'block';
-
-    clickCount = 0;
+async function spin() {
+    if(spinning || items.length === 0) return;
+    const unlock = new Audio(); unlock.play().then(()=>unlock.pause()).catch(()=>{});
+    prevStr = tabs[curTabIdx].content;
+    const isChaos = Math.random() < 0.2;
+    currentCType = isChaos ? ['modal','ad','pixel','invert','fall','invisible','mojibake'][Math.floor(Math.random()*7)] : null;
+    resetStyles();
+    if(currentCType === 'modal') await startModalHell();
+    if(currentCType === 'ad') document.getElementById('fakeAd').style.display = 'block';
     spinning = true;
-    resetVisuals();
-    const rollSnd = new Audio("https://soundeffect-lab.info/sound/anime/mp3/tympani-roll1.mp3");
-    if(!isMuted) { rollSnd.volume = globalVol; rollSnd.loop = true; rollSnd.play().catch(()=>{}); }
-
+    playS('roll');
     const winIdx = Math.floor(Math.random() * items.length);
-    let rotations = 10 + Math.random() * 5;
-    const duration = 5000;
+    const arc = (Math.PI*2) / items.length;
+    const rotations = 8 + Math.random() * 5; 
+    const targetAng = (rotations * Math.PI * 2) + (1.5 * Math.PI - (winIdx * arc) - (arc / 2));
+    let currentAng = 0;
     const start = performance.now();
-    const isReverse = eventType === 3;
-
+    const duration = 5000;
+    if(currentCType === 'invisible') document.getElementById('rCvs').classList.add('c-ghost');
     function animate(now) {
-        let progress = Math.min((now - start) / duration, 1);
-        let ease = 1 - Math.pow(1 - progress, 4);
-        let currentAng = (rotations * Math.PI * 2 * ease) * (isReverse ? -1 : 1);
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 4);
+        currentAng = targetAng * ease;
         drawRoulette(currentAng);
         if (progress < 1) requestAnimationFrame(animate);
-        else { rollSnd.pause(); finalize(winIdx, eventType); }
+        else finalizeSpin(winIdx);
     }
     requestAnimationFrame(animate);
 }
 
-function finalize(winIdx, eventType) {
+function finalizeSpin(winIdx) {
     spinning = false;
-    const winItem = items[winIdx];
+    let winItem = items[winIdx];
     const winColor = COLORS[winIdx % COLORS.length];
-    document.getElementById('resText').innerText = eventType === 11 ? "▯▯▯▯▯" : "✨ " + winItem + " ✨";
-    document.body.style.background = `linear-gradient(to bottom, ${winColor}, white)`;
-    if(!isMuted) { const winSnd = new Audio("https://soundeffect-lab.info/sound/anime/mp3/trumpet-majime1.mp3"); winSnd.volume = globalVol; winSnd.play().catch(()=>{}); }
     
-    if (eventType === 5) document.getElementById('rWrap').classList.add('c-fall');
-    if (eventType === 18) document.body.classList.add('c-invert');
+    if(currentCType === 'mojibake') winItem = "D@SI";
+    if(currentCType === 'pixel') document.getElementById('rWrap').classList.add('c-pixel');
+    if(currentCType === 'invert') document.body.classList.add('c-dark');
+    if(currentCType === 'fall') document.getElementById('rWrap').classList.add('c-fall');
+
+    document.getElementById('resText').innerText = winItem;
     
-    hist.unshift(winItem); if (hist.length > 10) hist.pop();
-    renderHist();
+    // 背景を上から下に「当選色」から「白」へのグラデーションに変更
+    document.body.style.background = `linear-gradient(to bottom, ${winColor} 0%, #ffffff 100%)`;
+    
+    playS('win');
+    if(currentCType !== 'mojibake') { hist.unshift(winItem); if(hist.length>10) hist.pop(); renderHist(); }
 }
 
-function resetVisuals() {
-    document.body.className = ""; document.getElementById('rWrap').className = "r-wrap";
-    document.getElementById('rCvs').className = ""; document.getElementById('fakeBanner').style.display = "none";
+function resetStyles() {
+    const w = document.getElementById('rWrap'); w.className="r-wrap";
+    document.getElementById('rCvs').className=""; document.body.classList.remove('c-dark');
+    document.getElementById('fakeAd').style.display="none"; 
+    document.body.style.background = "radial-gradient(circle, #ffffff 0%, #f0f2f5 100%)";
 }
 
-// --- タブ機能の修正 ---
-function renderTabs() {
-    const area = document.getElementById('tabsArea');
-    area.innerHTML = "";
-    tabs.forEach((t, i) => {
-        const btn = document.createElement('div');
-        btn.className = `tab-btn ${i === curTabIdx ? 'active' : ''}`;
-        
-        // テキスト部分
-        const label = document.createElement('span');
-        label.innerText = t.name;
-        label.style.flex = "1";
-        label.onclick = (e) => { 
-            e.stopPropagation(); // 重複クリック防止
-            selectTab(i); 
-        };
-
-        // 編集ボタン
-        const editIco = document.createElement('span');
-        editIco.innerHTML = "✎";
-        editIco.className = "rename-ico";
-        editIco.onclick = (e) => {
-            e.stopPropagation(); // タブ切り替えを発動させない
-            renameTab(i);
-        };
-
-        btn.appendChild(label);
-        btn.appendChild(editIco);
-        area.appendChild(btn);
-    });
-}
-
-function selectTab(i) {
-    curTabIdx = i;
-    renderTabs();
-    syncTab();
-}
-
-function renameTab(i) {
-    const newName = prompt("タブの名前を入力してください:", tabs[i].name);
-    if (newName !== null && newName.trim() !== "") {
-        tabs[i].name = newName.trim();
-        renderTabs(); // 名前を反映して再描画
-    }
-}
-
-function resetRoulette() {
-    if (confirm("現在表示中のリストをリセットしますか？")) {
-        lastContent = document.getElementById('itemsArea').value;
-        document.getElementById('itemsArea').value = "";
-        updateItems();
-    }
-}
-function undoReset() { if (lastContent) { document.getElementById('itemsArea').value = lastContent; updateItems(); } }
-
-function issueUrl() {
-    const data = btoa(encodeURIComponent(JSON.stringify(tabs)));
-    navigator.clipboard.writeText(location.origin + location.pathname + "#" + data);
-    alert("🔗 タブ情報を含むURLをコピーしました！");
-}
-
-function renderHist() {
-    document.getElementById('histUl').innerHTML = hist.map(h => `<li>${h}</li>`).join('');
-}
-
-// --- 背景背景アニメーション ---
+// 背景幾何学模様の設定
 let shapes = [];
 function initBg() {
-    const c = document.getElementById('bgCanvas');
-    c.width = window.innerWidth; c.height = window.innerHeight;
-    for(let i=0; i<30; i++) {
-        shapes.push({
-            x: Math.random() * c.width, y: Math.random() * c.height,
-            size: Math.random() * 30 + 10,
-            type: Math.floor(Math.random() * 3),
-            speed: Math.random() * 2 + 1,
-            color: COLORS[Math.floor(Math.random() * COLORS.length)]
-        });
-    }
+    const c = document.getElementById('bgCanvas'); c.width = window.innerWidth; c.height = window.innerHeight;
+    for(let i=0; i<40; i++) shapes.push({ 
+        x: Math.random()*c.width, 
+        y: Math.random()*c.height, 
+        s: Math.random()*20+10, 
+        sp: Math.random()*3 + 2, // 落下スピードを早く
+        col: COLORS[Math.floor(Math.random()*COLORS.length)], 
+        t: Math.floor(Math.random()*3) 
+    });
+    tick();
 }
-function loop() {
+function tick() {
     const c = document.getElementById('bgCanvas'), ctx = c.getContext('2d');
     ctx.clearRect(0,0,c.width,c.height);
-    shapes.forEach(s => {
-        s.y += s.speed; if (s.y > c.height) s.y = -50;
-        ctx.fillStyle = s.color; ctx.globalAlpha = 0.4; ctx.beginPath();
-        if(s.type === 0) ctx.arc(s.x, s.y, s.size/2, 0, Math.PI*2);
-        else if(s.type === 1) ctx.fillRect(s.x, s.y, s.size, s.size);
-        else { ctx.moveTo(s.x, s.y); ctx.lineTo(s.x+s.size, s.y+s.size); ctx.lineTo(s.x-s.size, s.y+s.size); ctx.closePath(); }
+    shapes.forEach(p => {
+        p.y += p.sp; if(p.y > c.height) { p.y = -30; p.x = Math.random()*c.width; }
+        ctx.fillStyle = p.col; 
+        ctx.globalAlpha = 0.6; // 色を強めに
+        ctx.beginPath();
+        if(p.t===0) ctx.arc(p.x, p.y, p.s/2, 0, Math.PI*2);
+        else if(p.t===1) ctx.fillRect(p.x, p.y, p.s, p.s);
+        else { ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+p.s, p.y+p.s); ctx.lineTo(p.x-p.s, p.y+p.s); ctx.closePath(); }
         ctx.fill();
     });
-    requestAnimationFrame(loop);
+    requestAnimationFrame(tick);
 }
+
+function renderTabs() {
+    const d = document.getElementById('tabs'); d.innerHTML = "";
+    tabs.forEach((t,i) => {
+        const div = document.createElement('div');
+        div.className = `tab-item ${i===curTabIdx?'active':''}`;
+        div.innerHTML = `<span onclick="setTab(${i})">${t.name}</span><span style="opacity:0.3; font-size:10px;" onclick="renTab(${i})">編集</span>`;
+        d.appendChild(div);
+    });
+}
+function setTab(i) { curTabIdx=i; renderTabs(); syncTab(); }
+function renTab(i) { const n=prompt("名前:", tabs[i].name); if(n){tabs[i].name=n; renderTabs();} }
+function renderHist() { const u = document.getElementById('histUl'); u.innerHTML=""; hist.forEach(h => { const l=document.createElement('li'); l.innerText=h; u.appendChild(l); }); }
+function hardReset() { if(confirm("全部消すよ？")){ tabs[curTabIdx].content=""; syncTab(); resetStyles(); } }
+function undo() { if(prevStr){ tabs[curTabIdx].content=prevStr; syncTab(); } }
+let mCount=0;
+function startModalHell() {
+    return new Promise(res => {
+        mCount=0; document.getElementById('modalHell').style.display='flex';
+        window.nextM = () => { mCount++; document.getElementById('mMsg').innerText="本当にいいですか？(" + mCount + "/5)"; if(mCount>=5){ document.getElementById('modalHell').style.display='none'; res(); } };
+    });
+}
+function copyUrl() {
+    const b64 = btoa(encodeURIComponent(JSON.stringify({t:tabs, c:curTabIdx})));
+    window.location.hash = b64; navigator.clipboard.writeText(window.location.href); alert("URLをコピーしました！🔗");
+}
+function loadHash() { try { if(window.location.hash){ const d = JSON.parse(decodeURIComponent(atob(window.location.hash.slice(1)))); tabs=d.t; curTabIdx=d.c; } } catch(e){} }
 </script>
 </body>
 </html>
