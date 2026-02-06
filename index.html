@@ -3,15 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>運命のルーレット・アルティメット EX（超圧縮版）</title>
+    <title>運命のルーレット・アルティメット EX</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     <style>
         :root {
             --bg-grad: linear-gradient(to bottom, #ffffff 0%, #f0f2f5 100%);
-            --text-color: #333;
-            --p-red: #ffb3ba; --p-yellow: #ffffba; --p-orange: #ffdfba;
-            --p-blue: #bae1ff; --p-purple: #e2baff; --p-green: #baffc9;
-            --p-gray: #e0e0e0; --mint-active: #b2ffb2; --border-deep: #4a90e2;
+            --text-color: #333; --p-blue: #bae1ff; --p-red: #ffb3ba; --mint-active: #b2ffb2;
         }
         * { box-sizing: border-box; }
         body {
@@ -29,15 +26,16 @@
         .tab-item.active { background-color: var(--mint-active); font-weight: bold; transform: scale(1.05); }
         .sys-btns { display: flex; flex-direction: column; gap: 8px; }
         button { padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:active { transform: scale(0.95); }
         .center-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .res-display { font-size: 32px; font-weight: bold; margin-bottom: 15px; height: 45px; text-align: center; }
         .r-wrap { position: relative; margin-bottom: 20px; }
         .needle { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 40px; z-index: 10; color: #ff4444; }
         canvas#rCvs { border-radius: 50%; box-shadow: 0 10px 40px rgba(0,0,0,0.15); background: white; }
-        #spinBtn { width: 220px; height: 60px; font-size: 24px; background: #66cc66; color: white; border-bottom: 5px solid #44aa44; }
-        textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 10px; resize: none; background: rgba(255,255,255,0.8); }
-        .hist-card { border: 1px solid #eee; border-radius: 20px; padding: 15px; height: 70%; background: rgba(255, 255, 255, 0.9); overflow: hidden; }
-        .hist-list { list-style: none; padding: 0; overflow-y: auto; height: 90%; text-align: center; }
+        #spinBtn { width: 220px; height: 60px; font-size: 24px; background: #66cc66; color: white; border-bottom: 5px solid #44aa44; margin-bottom: 15px; }
+        textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 10px; resize: none; background: rgba(255,255,255,0.85); }
+        .hist-card { border: 1px solid #eee; border-radius: 20px; padding: 15px; height: 70%; background: rgba(255, 255, 255, 0.9); }
+        .hist-list { list-style: none; padding: 0; overflow-y: auto; height: 90%; text-align: center; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -48,7 +46,7 @@
     <div class="left-panel">
         <div class="audio-box">
             <div style="font-size:11px; color:#888;">VOL: <span id="volText">50%</span></div>
-            <div class="vol-game" id="volGame"><div id="volBall"></div></div>
+            <div class="vol-game"><div id="volBall"></div></div>
             <button onclick="dropBall()" style="background:#f0f0f0; width:100%;">🔊 音量抽選</button>
         </div>
         <div class="tabs" id="tabs"></div>
@@ -85,29 +83,28 @@ let globalVol = 0.5;
 
 window.onload = () => { loadFromUrl(); renderTabs(); syncTab(); initBg(); };
 
-// --- データの圧縮とURLコピー ---
+// 【ここが重要】データを圧縮してURLを短くする関数
 function copyCompressedUrl() {
     const data = JSON.stringify({t: tabs, c: curTabIdx});
-    // データを圧縮して短くする
     const compressed = LZString.compressToEncodedURIComponent(data);
-    const url = window.location.origin + window.location.pathname + "#v2" + compressed;
+    // 識別子 "z" を付けてURL作成
+    const url = window.location.origin + window.location.pathname + "#z" + compressed;
     
     navigator.clipboard.writeText(url).then(() => {
-        alert("短縮用の短いURLをコピーしました！🔗\nこのまま短縮サイトに貼り付けられます。");
+        alert("短縮用の最短URLをコピーしました！🔗\nこのまま短縮サイトに貼り付けてください。");
     });
 }
 
-// --- URLからの復元 ---
+// 【ここが重要】圧縮されたURLを解凍して読み込む関数
 function loadFromUrl() {
     const hash = window.location.hash.slice(1);
     if (!hash) return;
     try {
         let json;
-        if (hash.startsWith('v2')) {
-            // 新しい圧縮形式
-            json = LZString.decompressFromEncodedURIComponent(hash.slice(2));
+        if (hash.startsWith('z')) {
+            json = LZString.decompressFromEncodedURIComponent(hash.slice(1));
         } else {
-            // 古いBase64形式
+            // 旧形式のサポート
             json = decodeURIComponent(atob(hash));
         }
         const d = JSON.parse(json);
@@ -115,7 +112,6 @@ function loadFromUrl() {
     } catch(e) { console.error("Load error"); }
 }
 
-// --- 基本機能 ---
 function syncTab() { document.getElementById('itemsArea').value = tabs[curTabIdx].content; updateItems(); }
 function updateItems() {
     items = document.getElementById('itemsArea').value.split('\n').filter(t => t.trim() !== "");
@@ -133,34 +129,29 @@ function drawRoulette(offset = 0) {
         const ang = offset + (i * arc);
         ctx.beginPath(); ctx.moveTo(r,r); ctx.arc(r,r,r-5,ang,ang+arc);
         ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
-        ctx.stroke();
         ctx.save(); ctx.translate(r,r); ctx.rotate(ang + arc/2);
         ctx.textAlign="right"; ctx.fillStyle="#333"; ctx.font="bold 14px sans-serif";
         ctx.fillText(txt.slice(0,8), r-20, 5); ctx.restore();
     });
 }
 
-async function spin() {
+function spin() {
     if(spinning || items.length === 0) return;
     spinning = true;
     const winIdx = Math.floor(Math.random() * items.length);
-    const arc = (Math.PI*2) / items.length;
-    const rotations = 5 + Math.random() * 5;
-    const targetAng = (rotations * Math.PI * 2) + (1.5 * Math.PI - (winIdx * arc) - (arc / 2));
+    const rotations = 8 + Math.random() * 5;
+    const targetAng = (rotations * Math.PI * 2) + (1.5 * Math.PI - (winIdx * ((Math.PI*2)/items.length)) - ((Math.PI*2)/items.length / 2));
     const start = performance.now();
     const duration = 4000;
-
     function animate(now) {
-        const elapsed = now - start;
-        const prog = Math.min(elapsed / duration, 1);
+        const prog = Math.min((now - start) / duration, 1);
         const ease = 1 - Math.pow(1 - prog, 3);
         drawRoulette(targetAng * ease);
         if (prog < 1) requestAnimationFrame(animate);
         else {
             spinning = false;
             document.getElementById('resText').innerText = items[winIdx];
-            hist.unshift(items[winIdx]);
-            renderHist();
+            hist.unshift(items[winIdx]); renderHist();
         }
     }
     requestAnimationFrame(animate);
@@ -180,9 +171,7 @@ function renderHist() {
     const u = document.getElementById('histUl'); u.innerHTML="";
     hist.slice(0,10).forEach(h => { const li=document.createElement('li'); li.innerText=h; u.appendChild(li); });
 }
-function hardReset() { if(confirm("リセットしますか？")){ tabs[curTabIdx].content=""; syncTab(); } }
-
-// 背景アニメーション
+function hardReset() { if(confirm("消す？")){ tabs[curTabIdx].content=""; syncTab(); } }
 function initBg() {
     const c = document.getElementById('bgCanvas'), ctx = c.getContext('2d');
     c.width = window.innerWidth; c.height = window.innerHeight;
