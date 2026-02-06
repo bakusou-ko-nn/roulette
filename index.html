@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>運命のルーレット・アルティメット EX（圧縮版）</title>
+    <title>運命のルーレット・アルティメット EX（超圧縮版）</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     <style>
         :root {
@@ -76,7 +76,7 @@
         </div>
         <div class="tabs" id="tabs"></div>
         <div class="sys-btns">
-            <button onclick="copyUrl()" style="background:var(--p-blue)">🔗 保存・URLコピー</button>
+            <button onclick="copyCompressedUrl()" style="background:var(--p-blue)">🔗 保存・URLコピー</button>
             <button onclick="hardReset()" style="background:var(--p-red)">⚠️ リセット</button>
             <button onclick="undo()" style="background:var(--p-yellow); font-size:11px;">↩️ 戻す(Undo)</button>
         </div>
@@ -104,6 +104,7 @@
 <div id="modalHell"><div style="background:white; padding:40px; border-radius:20px; text-align:center;"><p id="mMsg" style="font-size:20px; font-weight:bold;">準備はいいですか？</p><button onclick="nextM()" style="font-size:18px; padding:10px 30px; background:red; color:white;">はい</button></div></div>
 
 <script>
+// 基本のルーレット設定
 const COLORS = ['#ffb3ba', '#ffffba', '#ffdfba', '#bae1ff', '#e2baff', '#baffc9', '#ffccf9'];
 let items = [], hist = [], prevStr = "", spinning = false, currentCType = null, bgm = null;
 let tabs = [ { name: "タブ 1", content: "焼肉\n寿司\nうどん\nカレー\nハンバーグ\nピザ" }, { name: "タブ 2", content: "" }, { name: "タブ 3", content: "" }, { name: "タブ 4", content: "" }, { name: "タブ 5", content: "" } ];
@@ -111,8 +112,60 @@ let curTabIdx = 0;
 let globalVol = 0.5;
 let isMuted = false;
 
-window.onload = () => { loadHash(); renderTabs(); syncTab(); initBg(); updateVolDisp(); };
+window.onload = () => { 
+    loadFromHash(); // ページ読み込み時にハッシュから復元
+    renderTabs(); 
+    syncTab(); 
+    initBg(); 
+    updateVolDisp(); 
+};
 
+// -------------------------------------------------------------------------
+// 新機能：強力なデータ圧縮とURL発行
+// -------------------------------------------------------------------------
+function copyCompressedUrl() {
+    try {
+        // データをJSONにしてから強力に圧縮 (LZ-String)
+        const dataStr = JSON.stringify({t: tabs, c: curTabIdx});
+        const compressed = LZString.compressToEncodedURIComponent(dataStr);
+        
+        // URLを作成
+        const finalUrl = window.location.origin + window.location.pathname + "#z" + compressed;
+        
+        // クリップボードにコピー
+        navigator.clipboard.writeText(finalUrl).then(() => {
+            alert("短縮用の短いURLをコピーしました！🔗\nこのURLを短縮サイトに貼り付けてください。");
+        });
+    } catch (e) {
+        alert("エラーが発生しました。項目を少し減らして試してください。");
+    }
+}
+
+function loadFromHash() {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    
+    try {
+        let decodedData;
+        if (hash.startsWith('z')) {
+            // 新しい圧縮形式 (zで始まる) の場合
+            decodedData = LZString.decompressFromEncodedURIComponent(hash.slice(1));
+        } else {
+            // 古い形式の場合 (デコードを試みる)
+            decodedData = decodeURIComponent(atob(hash));
+        }
+        
+        if (decodedData) {
+            const parsed = JSON.parse(decodedData);
+            tabs = parsed.t;
+            curTabIdx = parsed.c;
+        }
+    } catch (e) {
+        console.error("データの復元に失敗しました:", e);
+    }
+}
+
+// --- 既存のルーレットロジック ---
 function syncTab() { document.getElementById('itemsArea').value = tabs[curTabIdx].content; updateItems(); }
 function updateItems() {
     items = document.getElementById('itemsArea').value.split('\n').filter(t => t.trim() !== "").slice(0, 500);
@@ -165,7 +218,6 @@ function playS(type) {
 
 async function spin() {
     if(spinning || items.length === 0) return;
-    const unlock = new Audio(); unlock.play().then(()=>unlock.pause()).catch(()=>{});
     prevStr = tabs[curTabIdx].content;
     const isChaos = Math.random() < 0.2;
     currentCType = isChaos ? ['modal','ad','pixel','invert','fall','invisible','mojibake'][Math.floor(Math.random()*7)] : null;
@@ -198,15 +250,12 @@ function finalizeSpin(winIdx) {
     spinning = false;
     let winItem = items[winIdx];
     const winColor = COLORS[winIdx % COLORS.length];
-    
     if(currentCType === 'mojibake') winItem = "D@SI";
     if(currentCType === 'pixel') document.getElementById('rWrap').classList.add('c-pixel');
     if(currentCType === 'invert') document.body.classList.add('c-dark');
     if(currentCType === 'fall') document.getElementById('rWrap').classList.add('c-fall');
-
     document.getElementById('resText').innerText = winItem;
     document.body.style.background = `linear-gradient(to bottom, ${winColor} 0%, #ffffff 100%)`;
-    
     playS('win');
     if(currentCType !== 'mojibake') { hist.unshift(winItem); if(hist.length>10) hist.pop(); renderHist(); }
 }
@@ -259,57 +308,12 @@ function renTab(i) { const n=prompt("名前:", tabs[i].name); if(n){tabs[i].name
 function renderHist() { const u = document.getElementById('histUl'); u.innerHTML=""; hist.forEach(h => { const l=document.createElement('li'); l.innerText=h; u.appendChild(l); }); }
 function hardReset() { if(confirm("全部消すよ？")){ tabs[curTabIdx].content=""; syncTab(); resetStyles(); } }
 function undo() { if(prevStr){ tabs[curTabIdx].content=prevStr; syncTab(); } }
-
 let mCount=0;
 function startModalHell() {
     return new Promise(res => {
         mCount=0; document.getElementById('modalHell').style.display='flex';
         window.nextM = () => { mCount++; document.getElementById('mMsg').innerText="本当にいいですか？(" + mCount + "/5)"; if(mCount>=5){ document.getElementById('modalHell').style.display='none'; res(); } };
     });
-}
-
-// -------------------------------------------------------------------------
-// 修正ポイント：LZStringを使ってデータを圧縮・解凍するように変更
-// -------------------------------------------------------------------------
-function copyUrl() {
-    // データを圧縮してEncodedURIComponent形式にする
-    const jsonStr = JSON.stringify({t:tabs, c:curTabIdx});
-    const compressed = LZString.compressToEncodedURIComponent(jsonStr);
-    
-    // URL作成
-    const url = window.location.origin + window.location.pathname + "#" + compressed;
-    
-    // 短縮URLサービスに通りやすくするためのアドバイス
-    if (url.length > 2000) {
-        alert("データ量が多すぎます！\nURL短縮ツールを使うには、項目を減らしてください。");
-    } else {
-        navigator.clipboard.writeText(url).then(() => {
-            alert("短縮用URLをコピーしました！\n\n【次の手順】\nコピーしたURLを短縮サイト（is.gd など）に\n貼り付けて短縮してください。");
-        });
-    }
-}
-
-function loadHash() {
-    try {
-        if(window.location.hash){
-            const hash = window.location.hash.slice(1);
-            // まずは新しい圧縮形式での解凍を試みる
-            let decompressed = LZString.decompressFromEncodedURIComponent(hash);
-            
-            // 解凍できなかった場合（古いURLの場合）、以前のBase64形式で試す
-            if (!decompressed) {
-                decompressed = decodeURIComponent(atob(hash));
-            }
-            
-            if (decompressed) {
-                const d = JSON.parse(decompressed);
-                tabs = d.t;
-                curTabIdx = d.c;
-            }
-        }
-    } catch(e) {
-        console.log("URL読み込みエラー: 旧形式の可能性があります", e);
-    }
 }
 </script>
 </body>
