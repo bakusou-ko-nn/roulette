@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>運命のルーレット・アルティメット・クソエディション</title>
+    <title>運命のルーレット・アルティメット・クソエディション改</title>
     <style>
         :root {
             --p-red: #ffb3ba; --p-yellow: #ffffba; --p-orange: #ffdfba;
@@ -20,18 +20,15 @@
             transition: background 1s ease, filter 0.3s;
         }
 
-        /* 背景レイヤー */
         #bgCanvas, #confettiCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -10; pointer-events: none; }
         #confettiCanvas { z-index: 5; }
 
-        /* 全体レイアウト */
         .main-container {
             display: grid; grid-template-columns: 260px 1fr 260px;
             gap: 50px; width: 95%; max-width: 1400px; height: 90vh;
             align-items: center; z-index: 10;
         }
 
-        /* 左パネル：タブと音量 */
         .left-panel { display: flex; flex-direction: column; gap: 30px; height: 100%; justify-content: center; }
         .vol-section {
             background: #fff; padding: 20px; border-radius: 15px; border: 1px solid #ddd; text-align: center;
@@ -45,9 +42,11 @@
         .tab-btn {
             padding: 15px; border: 1px solid var(--border-green); background: white;
             cursor: pointer; border-radius: 8px; text-align: left; transition: 0.3s;
-            display: flex; justify-content: space-between;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .tab-btn.active { background: var(--mint-active); border-radius: 20px; font-weight: bold; }
+        .tab-btn.active { background: var(--mint-active); border-radius: 20px; font-weight: bold; border-width: 2px; }
+        .rename-ico { font-size: 16px; opacity: 0.4; padding: 5px; cursor: pointer; transition: 0.2s; }
+        .rename-ico:hover { opacity: 1; color: var(--border-green); }
         
         .sys-btns { display: flex; flex-direction: column; gap: 10px; }
         .btn-base { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
@@ -55,7 +54,6 @@
         .btn-reset { background: var(--p-red); }
         .btn-undo { background: var(--p-yellow); font-size: 12px; }
 
-        /* 中央パネル：ルーレット */
         .center-panel { display: flex; flex-direction: column; align-items: center; position: relative; }
         #resText { font-size: 48px; font-weight: bold; margin-bottom: 20px; height: 60px; color: #333; text-align: center; }
         .r-wrap { position: relative; transition: all 0.5s; }
@@ -70,7 +68,6 @@
         #spinBtn:active { transform: translateY(3px); border-bottom-width: 2px; }
         #itemsArea { width: 100%; max-width: 500px; height: 150px; padding: 15px; border-radius: 12px; border: 1px solid #ccc; font-size: 16px; line-height: 1.5; }
 
-        /* 右パネル：履歴 */
         .right-panel { height: 100%; display: flex; flex-direction: column; justify-content: center; }
         .hist-box {
             border: 2px solid #ffb3ba; border-radius: 15px; background: white;
@@ -81,22 +78,19 @@
         #histUl { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
         #histUl li { padding: 12px; border-bottom: 1px dotted #ffb3ba; text-align: center; font-size: 14px; color: #555; }
 
-        /* クソイベント用特殊スタイル */
+        /* 特殊エフェクト用 */
         .c-invert { filter: invert(1); }
-        .c-mosaic { filter: blur(10px) contrast(200%); }
         .c-darkmode { background: #111 !important; }
         .c-darkmode #resText { color: white; }
         .c-darkmode .r-wrap { opacity: 0.1; }
-        .c-fall { transform: translateY(1000px) rotate(45deg) !important; }
+        .c-fall { transform: translateY(1200px) rotate(45deg) !important; }
         .c-ghost { opacity: 0 !important; }
-        .c-mini { transform: scale(0.3) translate(300px, 300px); }
         
         #fakeBanner {
             position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
             width: 500px; padding: 40px; background: #fff000; border: 10px solid red;
             z-index: 1000; display: none; text-align: center; font-weight: bold;
         }
-        #closeX { font-size: 120px; color: red; cursor: pointer; display: block; }
     </style>
 </head>
 <body>
@@ -106,8 +100,7 @@
 
 <div id="fakeBanner">
     当選確率10000%UP中！！<br>ここをクリック！
-    <span id="closeX" onclick="this.parentElement.style.display='none'">×</span>
-    <p>（↑ 閉じるボタンがデカいだけ）</p>
+    <span style="font-size:120px; color:red; cursor:pointer; display:block;" onclick="this.parentElement.style.display='none'">×</span>
 </div>
 
 <div class="main-container">
@@ -125,9 +118,9 @@
         <div class="tabs" id="tabsArea"></div>
 
         <div class="sys-btns">
-            <button class="btn-base btn-url" onclick="issueUrl()">🔗 保存・URL発行</button>
+            <button class="btn-base btn-url" onclick="issueUrl()">🔗 保存・URLコピー</button>
             <button class="btn-base btn-reset" onclick="resetRoulette()">⚠️ リセット</button>
-            <button class="btn-base btn-undo" onclick="undoReset()">↩️ 消す前を復活</button>
+            <button class="btn-base btn-undo" onclick="undoReset()">↩️ 戻す(Undo)</button>
         </div>
     </div>
 
@@ -138,7 +131,7 @@
             <canvas id="rCvs" width="500" height="500"></canvas>
         </div>
         <button id="spinBtn" onclick="handleSpin()">SPIN!</button>
-        <textarea id="itemsArea" placeholder="ここに単語を改行で入力（最大500件）"></textarea>
+        <textarea id="itemsArea" placeholder="ここに単語を改行で入力"></textarea>
     </div>
 
     <div class="right-panel">
@@ -150,21 +143,19 @@
 </div>
 
 <script>
-// --- 基本設定 ---
 const COLORS = ['#ffb3ba', '#ffffba', '#ffdfba', '#bae1ff', '#e2baff', '#baffc9', '#e0e0e0'];
 let items = [], hist = [], spinning = false, globalVol = 0.5, isMuted = false;
 let tabs = [
-    { name: "リスト 1", content: "大吉\n中吉\n小吉\n吉\n末吉\n凶" },
-    { name: "リスト 2", content: "" },
-    { name: "リスト 3", content: "" },
-    { name: "リスト 4", content: "" },
-    { name: "リスト 5", content: "" }
+    { name: "タブ 1", content: "焼肉\n寿司\nうどん\nカレー" },
+    { name: "タブ 2", content: "" },
+    { name: "タブ 3", content: "" },
+    { name: "タブ 4", content: "" },
+    { name: "タブ 5", content: "" }
 ];
 let curTabIdx = 0;
 let lastContent = "";
 let clickCount = 0;
 
-// --- 初期化 ---
 window.onload = () => {
     initBg();
     renderTabs();
@@ -184,36 +175,22 @@ function updateItems() {
 }
 document.getElementById('itemsArea').addEventListener('input', updateItems);
 
-// --- ルーレット描画 ---
 function drawRoulette(offset = 0) {
     const cvs = document.getElementById('rCvs'), ctx = cvs.getContext('2d'), r = cvs.width / 2;
     ctx.clearRect(0, 0, cvs.width, cvs.height);
     if (items.length === 0) return;
-
     const arc = (Math.PI * 2) / items.length;
     items.forEach((txt, i) => {
         const ang = offset + (i * arc);
-        ctx.beginPath();
-        ctx.moveTo(r, r);
-        ctx.arc(r, r, r - 10, ang, ang + arc);
-        ctx.fillStyle = COLORS[i % COLORS.length];
-        ctx.fill();
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        ctx.save();
-        ctx.translate(r, r);
-        ctx.rotate(ang + arc / 2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = "#333";
-        ctx.font = "bold 20px sans-serif";
-        ctx.fillText(txt.slice(0, 10), r - 40, 10);
-        ctx.restore();
+        ctx.beginPath(); ctx.moveTo(r, r); ctx.arc(r, r, r - 10, ang, ang + arc);
+        ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
+        ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
+        ctx.save(); ctx.translate(r, r); ctx.rotate(ang + arc / 2);
+        ctx.textAlign = "right"; ctx.fillStyle = "#333"; ctx.font = "bold 20px sans-serif";
+        ctx.fillText(txt.slice(0, 10), r - 40, 10); ctx.restore();
     });
 }
 
-// --- 音量・UI機能 ---
 function dropVolBall() {
     const b = document.getElementById('volBall'), bar = document.getElementById('volBar');
     b.style.display = "block";
@@ -231,182 +208,125 @@ function dropVolBall() {
     }, 20);
 }
 
-function toggleMute() {
-    isMuted = !isMuted;
-    document.getElementById('muteBtn').innerText = isMuted ? "🔊 MUTE: ON" : "🔇 MUTE: OFF";
-}
+function toggleMute() { isMuted = !isMuted; document.getElementById('muteBtn').innerText = isMuted ? "🔇 MUTE: ON" : "🔇 MUTE: OFF"; }
 
-function playSnd(url, forceVol = null) {
-    if (isMuted) return null;
-    const a = new Audio(url);
-    a.volume = forceVol !== null ? forceVol : globalVol;
-    a.play().catch(() => {});
-    return a;
-}
-
-// --- スピン処理 ---
 async function handleSpin() {
     if (spinning || items.length === 0) return;
-
-    // 20%でクソイベント抽選
     const isEvent = Math.random() < 0.2;
     const eventType = isEvent ? Math.floor(Math.random() * 25) : -1;
+    if (eventType === 20 && clickCount < 100) { clickCount++; document.getElementById('resText').innerText = `あと${100 - clickCount}回連打`; return; }
+    if (eventType === 21) { for(let i=0; i<10; i++) { if(!confirm(`後悔しませんか？ (${i+1}/10)`)) return; } }
+    if (eventType === 22) document.getElementById('fakeBanner').style.display = 'block';
 
-    // --- 事前嫌がらせイベント ---
-    if (eventType === 20) { // 連打要求
-        if (clickCount < 100) {
-            clickCount++;
-            document.getElementById('resText').innerText = `あと${100 - clickCount}回連打しろ`;
-            return;
-        }
-        clickCount = 0;
-    }
-    if (eventType === 21) { // プロンプト地獄
-        for(let i=0; i<10; i++) { if(!confirm(`本当に回すの？ (${i+1}/10)`)) return; }
-    }
-    if (eventType === 22) { // 広告バナー
-        document.getElementById('fakeBanner').style.display = 'block';
-    }
-
+    clickCount = 0;
     spinning = true;
     resetVisuals();
-
-    const rollSnd = playSnd("https://soundeffect-lab.info/sound/anime/mp3/tympani-roll1.mp3");
-    if (rollSnd) rollSnd.loop = true;
+    const rollSnd = new Audio("https://soundeffect-lab.info/sound/anime/mp3/tympani-roll1.mp3");
+    if(!isMuted) { rollSnd.volume = globalVol; rollSnd.loop = true; rollSnd.play().catch(()=>{}); }
 
     const winIdx = Math.floor(Math.random() * items.length);
     let rotations = 10 + Math.random() * 5;
-    const arc = (Math.PI * 2) / items.length;
-    
-    // イベント：逆噴射
-    const isReverse = eventType === 3;
-    const direction = isReverse ? -1 : 1;
-
-    // イベント：透明化
-    if (eventType === 23) document.getElementById('rCvs').classList.add('c-ghost');
-
-    let start = performance.now();
     const duration = 5000;
+    const start = performance.now();
+    const isReverse = eventType === 3;
 
     function animate(now) {
         let progress = Math.min((now - start) / duration, 1);
-        
-        // イベント：低解像度（回るほどモザイク）
-        if (eventType === 17) document.body.style.filter = `blur(${progress * 10}px)`;
-
         let ease = 1 - Math.pow(1 - progress, 4);
-        let currentAng = (rotations * Math.PI * 2 * ease) * direction;
-        
-        // イベント：ワープ（針がすり抜ける演出は描画オフセットで再現）
-        if (eventType === 8 && progress > 0.8) currentAng += Math.PI;
-
+        let currentAng = (rotations * Math.PI * 2 * ease) * (isReverse ? -1 : 1);
         drawRoulette(currentAng);
-
-        if (progress < 1) {
-            requestAnimationFrame(animate);
-        } else {
-            if (rollSnd) rollSnd.pause();
-            finalize(winIdx, eventType);
-        }
+        if (progress < 1) requestAnimationFrame(animate);
+        else { rollSnd.pause(); finalize(winIdx, eventType); }
     }
     requestAnimationFrame(animate);
 }
 
 function finalize(winIdx, eventType) {
     spinning = false;
-    let winItem = items[winIdx];
+    const winItem = items[winIdx];
     const winColor = COLORS[winIdx % COLORS.length];
-
-    // イベント：強制やり直し
-    if (eventType === 24) {
-        alert("エラー：もう一度やり直してください");
-        resetVisuals();
-        return;
-    }
-
-    // イベント：音量逆転 (爆音)
-    const finalVol = eventType === 22 ? 0.7 : globalVol;
-    playSnd("https://soundeffect-lab.info/sound/anime/mp3/trumpet-majime1.mp3", finalVol);
-
-    // 背景色変更
+    document.getElementById('resText').innerText = eventType === 11 ? "▯▯▯▯▯" : "✨ " + winItem + " ✨";
     document.body.style.background = `linear-gradient(to bottom, ${winColor}, white)`;
-
-    // イベント：文字化け
-    let displayText = winItem;
-    if (eventType === 11) displayText = "▯▯▯▯▯▯";
-    if (eventType === 16) { // ゲシュタルト崩壊
-        items = items.map(() => winItem);
-        drawRoulette();
-    }
-
-    document.getElementById('resText').innerText = displayText;
-
-    // 視覚的イベント適用
-    if (eventType === 1) document.getElementById('rWrap').style.transition = "none"; // 急停止用
-    if (eventType === 5) document.getElementById('rWrap').classList.add('c-fall'); // 重力
-    if (eventType === 18) document.body.classList.add('c-invert'); // 反転
-    if (eventType === 22) document.body.classList.add('c-darkmode'); // 暗闇
-    if (eventType === 14) { // 爆発
-        document.getElementById('resText').innerText = "ドカーン！";
-        document.getElementById('rWrap').classList.add('c-ghost');
-    }
-
-    // 履歴更新
-    hist.unshift(winItem);
-    if (hist.length > 10) hist.pop();
+    if(!isMuted) { const winSnd = new Audio("https://soundeffect-lab.info/sound/anime/mp3/trumpet-majime1.mp3"); winSnd.volume = globalVol; winSnd.play().catch(()=>{}); }
+    
+    if (eventType === 5) document.getElementById('rWrap').classList.add('c-fall');
+    if (eventType === 18) document.body.classList.add('c-invert');
+    
+    hist.unshift(winItem); if (hist.length > 10) hist.pop();
     renderHist();
 }
 
 function resetVisuals() {
-    document.body.className = "";
-    document.body.style.filter = "";
-    document.getElementById('rWrap').className = "r-wrap";
-    document.getElementById('rCvs').className = "";
-    document.getElementById('fakeBanner').style.display = "none";
+    document.body.className = ""; document.getElementById('rWrap').className = "r-wrap";
+    document.getElementById('rCvs').className = ""; document.getElementById('fakeBanner').style.display = "none";
 }
 
-// --- その他UI ---
+// --- タブ機能の修正 ---
 function renderTabs() {
     const area = document.getElementById('tabsArea');
     area.innerHTML = "";
     tabs.forEach((t, i) => {
-        const b = document.createElement('div');
-        b.className = `tab-btn ${i === curTabIdx ? 'active' : ''}`;
-        b.innerHTML = `<span onclick="selectTab(${i})">${t.name}</span><span style="font-size:10px; opacity:0.5;" onclick="renameTab(${i})">編集</span>`;
-        area.appendChild(b);
+        const btn = document.createElement('div');
+        btn.className = `tab-btn ${i === curTabIdx ? 'active' : ''}`;
+        
+        // テキスト部分
+        const label = document.createElement('span');
+        label.innerText = t.name;
+        label.style.flex = "1";
+        label.onclick = (e) => { 
+            e.stopPropagation(); // 重複クリック防止
+            selectTab(i); 
+        };
+
+        // 編集ボタン
+        const editIco = document.createElement('span');
+        editIco.innerHTML = "✎";
+        editIco.className = "rename-ico";
+        editIco.onclick = (e) => {
+            e.stopPropagation(); // タブ切り替えを発動させない
+            renameTab(i);
+        };
+
+        btn.appendChild(label);
+        btn.appendChild(editIco);
+        area.appendChild(btn);
     });
 }
-function selectTab(i) { curTabIdx = i; renderTabs(); syncTab(); }
-function renameTab(i) { const n = prompt("名前変更:", tabs[i].name); if(n) { tabs[i].name = n; renderTabs(); } }
 
-function renderHist() {
-    const ul = document.getElementById('histUl');
-    ul.innerHTML = hist.map(h => `<li>${h}</li>`).join('');
+function selectTab(i) {
+    curTabIdx = i;
+    renderTabs();
+    syncTab();
+}
+
+function renameTab(i) {
+    const newName = prompt("タブの名前を入力してください:", tabs[i].name);
+    if (newName !== null && newName.trim() !== "") {
+        tabs[i].name = newName.trim();
+        renderTabs(); // 名前を反映して再描画
+    }
 }
 
 function resetRoulette() {
-    if (confirm("全データをリセットしますか？")) {
+    if (confirm("現在表示中のリストをリセットしますか？")) {
         lastContent = document.getElementById('itemsArea').value;
         document.getElementById('itemsArea').value = "";
         updateItems();
-        resetVisuals();
     }
 }
-function undoReset() {
-    if (lastContent) {
-        document.getElementById('itemsArea').value = lastContent;
-        updateItems();
-    }
-}
+function undoReset() { if (lastContent) { document.getElementById('itemsArea').value = lastContent; updateItems(); } }
 
 function issueUrl() {
     const data = btoa(encodeURIComponent(JSON.stringify(tabs)));
-    const url = location.origin + location.pathname + "#" + data;
-    navigator.clipboard.writeText(url);
-    alert("🔗 リンクをコピーしました！このURLからいつでも復元できます。");
+    navigator.clipboard.writeText(location.origin + location.pathname + "#" + data);
+    alert("🔗 タブ情報を含むURLをコピーしました！");
 }
 
-// --- 背景アニメーション ---
+function renderHist() {
+    document.getElementById('histUl').innerHTML = hist.map(h => `<li>${h}</li>`).join('');
+}
+
+// --- 背景背景アニメーション ---
 let shapes = [];
 function initBg() {
     const c = document.getElementById('bgCanvas');
@@ -421,16 +341,12 @@ function initBg() {
         });
     }
 }
-
 function loop() {
     const c = document.getElementById('bgCanvas'), ctx = c.getContext('2d');
     ctx.clearRect(0,0,c.width,c.height);
     shapes.forEach(s => {
-        s.y += s.speed;
-        if (s.y > c.height) s.y = -50;
-        ctx.fillStyle = s.color;
-        ctx.globalAlpha = 0.4;
-        ctx.beginPath();
+        s.y += s.speed; if (s.y > c.height) s.y = -50;
+        ctx.fillStyle = s.color; ctx.globalAlpha = 0.4; ctx.beginPath();
         if(s.type === 0) ctx.arc(s.x, s.y, s.size/2, 0, Math.PI*2);
         else if(s.type === 1) ctx.fillRect(s.x, s.y, s.size, s.size);
         else { ctx.moveTo(s.x, s.y); ctx.lineTo(s.x+s.size, s.y+s.size); ctx.lineTo(s.x-s.size, s.y+s.size); ctx.closePath(); }
